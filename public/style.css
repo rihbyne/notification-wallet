@@ -1,0 +1,66 @@
+/* apply these base styles to every element */
+* {margin: 0; padding: 0; box-sizing:border-box; }
+
+body {
+    font: 10px Ubuntu, Consolas, Arial;
+}
+
+.base {
+
+}
+
+.left-msgbox {
+    width: 50%;
+    float:left;
+    
+}
+
+.right-syslog {
+    width: 50%;
+    float: right
+}
+
+#messages {
+    overflow : auto;
+}
+
+#syslog {
+    overflow: auto;
+    background-color: black;
+    color: green;
+}
+
+.msg-control-panel {
+    background: #000;
+    padding: 3px;
+    bottom: 0;
+    width: 100%;
+}
+
+.msg-control-panel input {
+    border: 0;
+    padding: 10px;
+    width: 90%;
+    margin-right: .5%;
+}
+
+.msg-control-panel button {
+    width: 9%;
+    background: rgb(130, 224, 255);
+    border: none;
+    padding: 10px;
+}
+
+#msg-flow {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+#msg-flow li {
+    padding: 5px 10px;
+}
+
+#msg-flow li:nth-child(odd) {
+    background: #eee;
+}

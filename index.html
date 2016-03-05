@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>websockets for rt-messaging</title>
+          <link rel="stylesheet" href="style.css" />
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.min.js"></script>
+          <script src="vendor/socket.io.js"></script>
+          <script type="text/javascript">
+               var socket = io();
+               socket.emit('stream-logs', {"log": "something"});
+
+               $(document).ready(function(){
+                             $('#msg-send').click(function() {
+                                    var msg_txt = $('#msg-input').val();
+                                    socket.emit('chat-messages', msg_txt);
+                             });
+
+                             socket.on('stream-log', function(log){
+                                    console.log(log);
+                             });
+
+                             socket.on('chat-messages', function(msg){
+                                   $('#msg-flow').append($('<li>').text(msg));
+                             });
+               });
+               
+          </script>
+  </head>
+  <body>
+    <div class="base">
+      <!-- begin msgbox to the left -->
+      <div class="left-msgbox">
+        <div id="msgbox">
+          <div id="messages">
+            <ul id="msg-flow"></ul>
+          </div>
+          
+          <div class="msg-control-panel">
+            <input id="msg-input" type="text" />
+            <button id="msg-send">Send</button>
+          </div>
+        </div>
+      </div>
+      <!-- end msgbox -->
+      <!-- to the right is syslog -->
+      <div class="right-syslog">
+        <div id="syslog">
+        </div>
+      </div>
+      <!-- end syslog -->
+    </div>
+  </body>
+</html>

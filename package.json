@@ -1,0 +1,28 @@
+{
+  "name": "notification-wallet",
+  "version": "0.0.1",
+  "description": "example node app using web sockets to stream and sync data between devices",
+  "main": "index.js",
+  "dependencies": {
+    "chokidar": "^1.4.3",
+    "express": "^4.13.4",
+    "socket.io": "^1.4.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/rihbyne/notification-wallet.git"
+  },
+  "keywords": [
+    "nodejs",
+    "realtime",
+    "websockets"
+  ],
+  "author": "Rihan Pereira",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/rihbyne/notification-wallet#readme"
+}
