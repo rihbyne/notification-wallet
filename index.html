@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html>
   <head>
     <meta charset="utf-8">
@@ -18,6 +19,7 @@
 
                              socket.on('stream-log', function(log){
                                     console.log(log);
+                                    $('#syslog').append($('<p>').text(log));
                              });
 
                              socket.on('chat-messages', function(msg){
@@ -35,7 +37,6 @@
           <div id="messages">
             <ul id="msg-flow"></ul>
           </div>
-          
           <div class="msg-control-panel">
             <input id="msg-input" type="text" />
             <button id="msg-send">Send</button>
@@ -43,9 +44,16 @@
         </div>
       </div>
       <!-- end msgbox -->
+
+      <!-- partition for two column layout -->
+      <span id="partition"></span>
+
       <!-- to the right is syslog -->
       <div class="right-syslog">
         <div id="syslog">
+          <p>
+             syslog messages come here. let it flood the text.
+          </p>
         </div>
       </div>
       <!-- end syslog -->
