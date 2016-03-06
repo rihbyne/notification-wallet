@@ -1,40 +1,33 @@
 /* apply these base styles to every element */
 * {margin: 0; padding: 0; box-sizing:border-box; }
 
-body {
-    font: 10px Ubuntu, Consolas, Arial;
+html, body {
+    font: 12px Ubuntu, Consolas, Arial;
+    height: 100%;
 }
 
 .base {
-
+    overflow: hidden;
 }
 
 .left-msgbox {
     width: 50%;
-    float:left;
-    
-}
-
-.right-syslog {
-    width: 50%;
-    float: right
+    float: left; 
 }
 
 #messages {
-    overflow : auto;
-}
-
-#syslog {
-    overflow: auto;
-    background-color: black;
-    color: green;
+    position: absolute;
+    width: 50%;
+    height: 94%;
+    overflow-y: auto;
 }
 
 .msg-control-panel {
+    position: absolute;
+    width: 50%;
+    bottom:0;
     background: #000;
     padding: 3px;
-    bottom: 0;
-    width: 100%;
 }
 
 .msg-control-panel input {
@@ -43,10 +36,9 @@ body {
     width: 90%;
     margin-right: .5%;
 }
-
 .msg-control-panel button {
     width: 9%;
-    background: rgb(130, 224, 255);
+    background: rgb(212, 131, 11);
     border: none;
     padding: 10px;
 }
@@ -64,3 +56,33 @@ body {
 #msg-flow li:nth-child(odd) {
     background: #eee;
 }
+
+#partition {
+    position: absolute;
+    background: #bcbcbc;
+    width: 2px;
+    height: 100%;
+    left: 50%;
+    z-index: 1;
+}
+
+.right-syslog {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    left: 50%;
+}
+
+#syslog {
+    background-color: black;
+    color: #47C13E;
+    overflow-y: auto;
+    height: 100%;
+}
+
+#syslog p {
+    padding: 5px;
+}
+
+
+
