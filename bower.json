@@ -1,0 +1,26 @@
+{
+  "name": "wallet-ui",
+  "description": "example node app using web sockets to stream and sync data between devices",
+  "main": "index.js",
+  "authors": [
+    "Rihan Pereira"
+  ],
+  "license": "ISC",
+  "keywords": [
+    "nodejs",
+    "realtime",
+    "websockets"
+  ],
+  "moduleType": [],
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^2.2.1"
+  }
+}
