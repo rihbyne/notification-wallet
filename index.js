@@ -7,6 +7,9 @@ var chokidar = require('chokidar');
 
 ws_chat.use(express.static(__dirname + '/public'));
 
+ws_chat.use(express.static(__dirname + '/bower_components'));
+
+
 /* express handles the initial GET request*/
 ws_chat.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
