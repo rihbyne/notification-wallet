@@ -22,9 +22,18 @@ var notification_wallet = mongoose.Schema({
     user_id:                          {type: String},          // Id
     first_name:                       {type: String},          // First Name of User
     last_name:                        {type: String},          // Last Name of Use
-    notification_body: 				  {type: String}           // Notification Body
     
 }, { versionKey: false });
 
+var notification_msg = mongoose.Schema({
+
+    user_id:                          {type: String},          	 // Id
+    notification_body: 				  {type: String},           // Notification Body
+    read: 							  {type: Boolean, default:0},
+    created_at: 					  {type: Date, default:Date.now()} 
+
+}, { versionKey: false });
 // Model
-module.exports = mongoose.model('notification_wallet', notification_wallet);
+module.exports.notification_msg = mongoose.model('notification_msg', notification_msg);
+
+module.exports.notification_wallet = mongoose.model('notification_wallet', notification_wallet);

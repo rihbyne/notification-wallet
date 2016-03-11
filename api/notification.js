@@ -58,12 +58,27 @@ module.exports.sendVerificationEmail = function(req){
 
       console.log('mail callback success');
        
-      var notificationInfo = new notificationschema({
+      var notificationInfo = new notificationschema.notification_wallet({
         user_id : accountInfo._id,
         first_name : accountInfo.first_name,
-        last_name : accountInfo.last_name,
-        notification_body: 'Your SearchTrade account has been created.'
+        last_name : accountInfo.last_name
       });
+
+      var notificationMsg = new notificationschema.notification_msg({
+        user_id : accountInfo._id,
+        notification_body : 'Your account has been created successfully' 
+        
+      });
+
+      notificationMsg.save(function(err){
+        if(err)
+        {
+          console.log(err);
+          return err;
+        }
+
+        console.log('Message Saved SuccessFully');
+      }); 
 
       notificationInfo.save(function(err){
 
