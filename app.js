@@ -1,5 +1,6 @@
 "use strict";
 
+var mongo               = require('./config/mongo.js');
 var notificationschema  = require('./model/notification_model.js');
 var app                 = require('express')();
 var server              = require('http').Server(app);
@@ -24,6 +25,7 @@ app.post('/secure/sendforgotpassword', notification.sendforgotpassword);
 app.post('/secure/changePassEmail', notification.changePassEmail);
 app.post('/secure/resettedConfirmation', notification.resettedConfirmation);
 app.post('/secure/sendMail', mailer.sendPHPmail);
+app.post('/secure/getNotificationStatus', mailer.getNotificationStatus);
 
 app.post('/secure/getMyNotification', notification.getMyNotification);
 

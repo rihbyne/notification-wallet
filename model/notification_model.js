@@ -1,20 +1,4 @@
-// Packages
-var mongoose        = require('mongoose');      // For Mongoose 
-
-// Build the connection string 
-var dbURI = 'mongodb://localhost/notification'; 
-
-// Create the database connection 
-mongoose.connect(dbURI); 
-
-var db_server  = process.env.DB_ENV || 'primary';
-
-// CONNECTION EVENTS
-// When successfully connected
-mongoose.connection.on('connected', function () {  
-  console.log('Mongoose default connection open to ' + dbURI);
-  console.log("Connected to " + db_server + " DB!");
-}); 
+var mongoose        = require('mongoose');           // For Mongoose
 
 // Schema
 var notification_wallet = mongoose.Schema({
@@ -33,7 +17,7 @@ var notification_msg = mongoose.Schema({
     created_at: 					  {type: Date, default:Date.now()} 
 
 }, { versionKey: false });
+
 // Model
 module.exports.notification_msg = mongoose.model('notification_msg', notification_msg);
-
 module.exports.notification_wallet = mongoose.model('notification_wallet', notification_wallet);
