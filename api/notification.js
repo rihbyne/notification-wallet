@@ -237,3 +237,36 @@ module.exports.resettedConfirmation = function(req){
   });
 
 }
+
+module.exports.getMyNotification = function(req,res){
+
+  var user_id = req.body.user_id;
+
+  notificationschema.notification_msg
+  .find({'user_id':user_id})
+  .populate('user_id')
+  .exec(function(err, results){
+    if (err) {throw err};
+    console.log(results);
+    res.send(results);
+  });
+
+}
+
+// module.exports.populate = function(req,res){
+
+//   var user_id = req.body.user_id;
+
+//                // notification_wallet.user_id
+
+//   notificationschema.notification_msg
+//   .find({'user_id':user_id})
+//  // .populate('notification_msg.notification_body')
+//  .populate('read,created_at,notification_body,user_id,first_name,last_name')
+//   .exec(function(err, results){
+//     if (err) {throw err};
+//     console.log(results);
+//     res.send(results);
+//   });
+
+// }
