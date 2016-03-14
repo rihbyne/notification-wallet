@@ -242,7 +242,7 @@ module.exports.getMyNotification = function(req,res){
 
   var user_id = req.body.user_id;
 
-  notificationschema.notification_msg
+  notificationschema.notification_wallet
   .find({'user_id':user_id})
   .populate('user_id')
   .exec(function(err, results){
