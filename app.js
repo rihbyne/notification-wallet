@@ -25,10 +25,11 @@ app.post('/secure/sendforgotpassword', notification.sendforgotpassword);
 app.post('/secure/changePassEmail', notification.changePassEmail);
 app.post('/secure/resettedConfirmation', notification.resettedConfirmation);
 app.post('/secure/sendNotification', mailer.sendNotification);
+app.post('/secure/sendRejectBidNotification', mailer.sendRejectBidNotification);
 app.post('/secure/getNotificationStatus', mailer.getNotificationStatus);
 
 app.post('/secure/getMyNotification', notification.getMyNotification);
 
-server.listen(4000, function(){
+server.listen(4100, function(){
 	console.log('Connected To server at port 4000 with socket');
 });

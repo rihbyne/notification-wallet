@@ -14,6 +14,7 @@
   "license": "ISC",
   "homepage": "https://bitbucket.org/walletnode/notification-wallet#readme",
   "dependencies": {
+    "async": "^1.5.2",
     "body-parser": "^1.15.0",
     "crypt": "0.0.1",
     "express": "^4.13.4",

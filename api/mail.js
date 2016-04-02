@@ -12,7 +12,7 @@ var from_who            = 'donotreply@searchtrade.com';						// Sender of Email
 var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key For Mailgun
 var domain              = 'searchtrade.com';								// Domain Name
 
-var ip                  = 'http://192.168.2.12:5000';
+var ip                  = 'http://192.168.1.12:5000';
 var mailgun             = new Mailgun({apiKey: api_key, domain: domain});	// Mailgun Object
 
 
@@ -27,6 +27,11 @@ var sendResponse = function(req, res, status, errCode, errMsg) {
         dbDate: d
     });
     
+}
+
+function validateEmail(email){
+    var re = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+	return re.test(email);
 }
 
 // Email Sending Function
@@ -88,6 +93,21 @@ module.exports.sendNotification = function (req, res){
 		return;
 	}
 	
+	// Validate Signature
+	if(to=="" || to== null || to==undefined)
+	{
+		console.log('Email is Missing');
+		master.sendResponse(req, res, 200, 1, "Mandatory field not found");
+		return;
+	}
+	
+	if(!validateEmail(to))
+	{
+		console.log('Incorrect Email Format');
+		master.sendResponse(req, res, 200, 7, "Incorrect email id format");
+		return;
+	}
+	
 	var notification 		= first_name+" "+last_name+", "+notification_body;
 	
 	var query = {publicKey:publicKey,token:true};
@@ -131,7 +151,7 @@ module.exports.sendNotification = function (req, res){
 							from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
 							to: to, 								            // List of Receivers
 							subject: subject, 		                            // Subject line
-							text: email_body,									// Text
+							text: email_body,
 							html: email_body
 						};
 					
@@ -159,7 +179,7 @@ module.exports.sendNotification = function (req, res){
 					
 					if(4&parseInt(notification_code))
 					{
-						console.log("Push Notification");		
+						console.log("Push Notification");
 					}
 					
 					var notification_message = new notificationschema.notification_msg({ 
@@ -193,6 +213,202 @@ module.exports.sendNotification = function (req, res){
     });
     
 }
+
+
+// PHP Reject Bid Functionality
+module.exports.sendRejectBidNotification = function (req, res){
+
+	var async = require('async');
+
+	var data				= req.body.data;
+	var notification_code 	= req.body.notification_code;
+	var keyword 			= req.body.keyword;
+	var publicKey			= req.body.publicKey;
+	var signature			= req.body.signature;
+	
+	// Validate Public Key
+	if(publicKey =="" || publicKey == null || publicKey == undefined)
+	{
+		console.log('Public Key is Missing');
+		sendResponse(req, res, 200, 1, "Mandatory field not found");
+		return;
+	}
+
+	// Validate Signature
+	if(signature =="" || signature == null || signature == undefined)
+	{
+		console.log('Signature is Missing');
+		master.sendResponse(req, res, 200, 1, "Mandatory field not found");
+		return;
+	}
+	
+	// Validate Data
+	if(data == "" || data == undefined || data == null)
+	{
+		console.log('No Data Received');
+		master.sendResponse(req, res, 200, -1, "Success");
+		return;
+	}
+	
+	var query = {publicKey:publicKey,token:true};
+	
+	request.post({
+                                
+        url: ip+'/api/getPvtKey',
+        body: query,
+        json: true,
+        headers: {"content-type": "application/json"}
+
+    },function optionalCallback(err, httpResponse, body){
+
+        if (err)
+        {
+            return console.error('Curl request Failed for register api: \n', err);
+        }
+        
+		if(body.errCode == -1)
+		{
+			var privateKey = body.errMsg;
+			var text = 'data='+data+'&keyword='+keyword+'&notification_code='+notification_code+'&publicKey='+publicKey;
+			
+			crypt.validateSignature(text, signature, privateKey, function(isValid){
+			
+				// Signature Not Matched
+				if (!isValid)
+				{
+					console.log('Invalid Signature');
+					sendResponse(req, res, 200, 14, "Invalid Signature");
+					return;
+				}
+				
+				else
+				{
+					data = data.replace(/\[/g,"");
+					data = data.replace(/\]/g,"");
+					data = data.replace(/\\/g,"");
+					data = data.split(",");
+					var length = data.length;
+				
+					if(2&parseInt(notification_code))
+					{
+						console.log("Send Email");
+						
+						for(var i=0; i<length; i++)
+						{
+							var singleJson = data[i].split("/"); 	
+
+							var bidRetEmail = singleJson[1];		// Storing Email 
+
+							var bidAmount = singleJson[3];			// Storing Amount
+							
+							var emailBody = '<div style="border:solid thin black;padding:5px"><div style="width:100%;text-align:left;min-height:50px;background-color:#25a2dc;padding: 1%;padding-bottom: 0px;"><img style="max-width:200px;" src="www.searchtrade.com/images/searchtrade_white.png"></img></div><p>Hello, <br/> <br/>Your bid of '+bidAmount+' BTC for the keyword #'+keyword+' on SearchTrade.com was not the highest bid and so it has been rejected.</p><p>Regards from SearchTrade team.<br><br>Product of SearchTrade.com Pte Ltd , Singapore<br><br></p></div>';
+						
+							var mailOptions = {
+								from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
+								to: bidRetEmail, 								    // List of Receivers
+								subject: "SearchTrade: Keyword buy order rejected", // Subject line
+								text: emailBody,
+								html: emailBody
+							};
+						
+							mailgun.messages().send(mailOptions, function(err, cb){
+								
+								//Error In Sending Email
+								if (err) {
+									
+									console.log('Mail Not Sent');
+									console.log(err);
+									sendResponse(req, res, 200, 29, "Email Sending Error");
+									return;
+
+								}
+								
+								console.log('Mail Sent Successfully');
+		
+							});
+							
+						}
+					}
+
+					if(4&parseInt(notification_code))
+					{
+						console.log("Send SMS");		
+					}
+					
+					if(1&parseInt(notification_code))
+					{
+						console.log("Push Notification");
+					}
+					
+					async.series([
+					
+						function (callback)
+						{
+							var p = 0;
+						
+							for(var i=0; i<length; i++)
+							{
+								var singleJson = data[i].split("/"); 	
+
+								var bidRetEmail = singleJson[1];		// Storing Email 
+
+								var user_id = singleJson[6];			// Storing User ID
+								
+								user_id = user_id.replace(/\"/g,"");
+								user_id = user_id.replace(/\ /g,"");
+								
+								var bidAmount = singleJson[3];			// Storing Amount
+								
+								var notification_message = new notificationschema.notification_msg({ 
+									user_id: user_id, 	                    													// User Id
+									notification_body: "Your bid of "+bidAmount+"BTC has been rejected on keyword #"+keyword   	// Text
+								});
+
+								notification_message.save(function(err, result){
+
+									if(err)
+									{
+										console.log(err);
+										sendResponse(req, res, 200, 5, "Database Error");
+										return;
+									}
+									
+									if(result)
+									{
+										if(length-p==1)
+										{
+											callback();
+										}	
+										
+										p++;
+									}
+
+								});
+								
+							}
+						},
+						
+						function callback()
+						{
+							sendResponse(req, res, 200, -1, "Success");
+						}
+						
+					])
+					
+				}
+				
+			})
+		}
+		
+		else
+		{
+			sendResponse(req, res, 200, body.errCode, body.errMsg);
+		}
+        
+    });
+	
+}
+
 
 // Getting Notification Status
 module.exports.getNotificationStatus = function (email, cb){
