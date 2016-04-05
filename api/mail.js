@@ -148,7 +148,7 @@ module.exports.sendNotification = function (req, res){
 				
 				else
 				{
-					if(1&parseInt(notification_code))
+					if(2&parseInt(notification_code))
 					{
 						console.log("Send Email");
 						
@@ -177,12 +177,12 @@ module.exports.sendNotification = function (req, res){
 						});
 					}
 
-					if(2&parseInt(notification_code))
+					if(4&parseInt(notification_code))
 					{
 						console.log("Send SMS");		
 					}
 					
-					if(4&parseInt(notification_code))
+					if(1&parseInt(notification_code))
 					{
 						console.log("Push Notification");
 					}
