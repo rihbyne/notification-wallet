@@ -12,9 +12,11 @@ var from_who            = 'donotreply@searchtrade.com';						// Sender of Email
 var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key For Mailgun
 var domain              = 'searchtrade.com';								// Domain Name
 
-var ip                  = 'http://192.168.1.12:5000';
+var ip                  = 'http://192.168.2.26:5000';
 var mailgun             = new Mailgun({apiKey: api_key, domain: domain});	// Mailgun Object
-
+// var app 				= require('express')();
+// var http				= require('http').Server(app);
+var io 					= require('./socket.js');
 
 // Response Function
 var sendResponse = function(req, res, status, errCode, errMsg) {
@@ -60,10 +62,9 @@ module.exports.sendmail = function (mailinfo, res) {
 
 };
 
-
 // PHP Mail Functionality in Node
 module.exports.sendNotification = function (req, res){
-    
+
     var to                  = req.body.to;
     var subject             = req.body.subject;
     var email_body          = req.body.email_body;
@@ -76,6 +77,10 @@ module.exports.sendNotification = function (req, res){
     
 	var publicKey			= req.body.publicKey;
 	var signature			= req.body.signature;
+	
+	var socketio 			= req.app.get('socketio');
+	
+	console.log(socketio);
 	
 	// Validate Public Key
 	if(publicKey=="" || publicKey== null || publicKey==undefined)
@@ -194,15 +199,17 @@ module.exports.sendNotification = function (req, res){
 						  console.log(err);
 						  return err;
 						}
-
+						
 						console.log('Saved SuccessFully');
-						sendResponse(req, res, 200, -1, "Success");
+						sendResponse(req, res, 200, -1, "Success");						
+						io.emit("DatabaseEvent",{ signal : 'true' });
 
 					});
 					
 				}
 				
 			})
+			
 		}
 		
 		else
@@ -213,7 +220,6 @@ module.exports.sendNotification = function (req, res){
     });
     
 }
-
 
 // PHP Reject Bid Functionality
 module.exports.sendRejectBidNotification = function (req, res){
@@ -390,7 +396,9 @@ module.exports.sendRejectBidNotification = function (req, res){
 						
 						function callback()
 						{
+							io.emit("DatabaseEvent",{ signal : 'true' });
 							sendResponse(req, res, 200, -1, "Success");
+							
 						}
 						
 					])

@@ -2,23 +2,60 @@
 <html>
   <head>
     <title></title>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
     <script>
-    console.log('Page Load');
-    var socket = io.connect('http://localhost:4000');
+	
+    //console.log('Page Load');
+    //var socket = io.connect('http://192.168.2.34:4100');
+	var socket = io();
     // Connectivity
-    socket.emit('username', 'prashant');
-    socket.on('reconnect', function () {
-    console.log('Reconnected to the server');
-    socket.emit('username', 'prashant');
-    });
-    socket.on('show data', function(data){
-    console.log('show data socket on');
-    console.log(data);
-    });
+    //socket.emit('username', 'prashant');
+    //socket.on('reconnect', function () {
+    //console.log('Reconnected to the server');
+    //socket.emit('username', 'prashant');
+    //});
+    //socket.on('show data', function(data){
+    //console.log('show data socket on');
+    //console.log(data);
+    //});
+	
+	//$(document).ready(function(){
+	
+	function sendData()
+	{
+		var user_id = document.getElementById('list').value;
+		socket.emit("message_to_server", {user_id:user_id});
+	}
+	
+	//})
+	
+	socket.on("message_to_client", function(data) {
+		console.log(data);
+		document.getElementById("data").innerHTML = data['data'];
+	});
+	
+	socket.on("DatabaseEvent", function(data) {
+		console.log(data);
+		sendData();
+	});
+	
+	
     </script>
-    <div id="name"></div>
+	
+	<select onchange="sendData()" id="list">
+		
+		<option value="">Select</option>
+		<option value="54a7b98e54b6bdaf4c753ffc9ac879916a8b96cb">Prashant Tapase</option>
+		<option value="54a7b98e54b6bdaf4c753ffc9ac879916a8b96c8">Swanand Pingle</option>
+		<option value="54a7b98e54b6bdaf4c753ffc9ac879916a8b96c5">Rihan</option>
+	
+	</select>
+	
+	<br>
+	
+    <div id="data"></div>
   </body>
 </html>
