@@ -50,7 +50,7 @@ io.on('connection', function(socket){
 					if(p==length)
 					{
 						io.to(user_id).emit("message_to_client",{ data : record });
-						console.log('Record : '+record);
+						//console.log('Record : '+record);
 					}
 				}
 			

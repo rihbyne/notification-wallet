@@ -18,6 +18,7 @@
     "body-parser": "^1.15.0",
     "crypt": "0.0.1",
     "express": "^4.13.4",
+    "gcm": "^1.0.1",
     "mailgun-js": "^0.7.7",
     "mongoose": "^4.4.6",
     "morgan": "^1.7.0",

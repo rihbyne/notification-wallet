@@ -3,6 +3,7 @@
 "use strict";
 
 var notificationschema  = require('../model/notification_model.js');
+var http 				= require('http');
 //var notiMessageSchema   = require('../model/notification_message_model.js');
 var Mailgun             = require('mailgun-js');							// For Emails (Mailgun Module)
 var request             = require('request');                               // Request Module
@@ -14,9 +15,14 @@ var domain              = 'searchtrade.com';								// Domain Name
 
 var ip                  = 'http://192.168.2.26:5000';
 var mailgun             = new Mailgun({apiKey: api_key, domain: domain});	// Mailgun Object
-// var app 				= require('express')();
-// var http				= require('http').Server(app);
 var io 					= require('./socket.js');
+
+var smsLoginId 			= '7827572892';
+var smsPass				= 'amit123456';
+var optins				= 'OPTINS';
+
+//var GCM 				= require('gcm').GCM;
+//var gcm 				= new GCM(AIzaSyCO79TE_Cdnl2KMLbb4bxxs-P5DrsAI4WI);
 
 // Response Function
 var sendResponse = function(req, res, status, errCode, errMsg) {
@@ -72,15 +78,14 @@ module.exports.sendNotification = function (req, res){
     var first_name          = req.body.first_name;
     var last_name           = req.body.last_name;
     var user_id             = req.body.user_id;
+	var smsText				= req.body.smsText;
+	var mobileNumber		= req.body.mobileNumber;
+	
     var notification_body   = req.body.notification_body;
 	var notification_code	= req.body.notification_code;
     
 	var publicKey			= req.body.publicKey;
 	var signature			= req.body.signature;
-	
-	var socketio 			= req.app.get('socketio');
-	
-	console.log(socketio);
 	
 	// Validate Public Key
 	if(publicKey=="" || publicKey== null || publicKey==undefined)
@@ -134,7 +139,7 @@ module.exports.sendNotification = function (req, res){
 		if(body.errCode == -1)
 		{
 			var privateKey = body.errMsg;
-			var text = 'to='+to+'&subject='+subject+'&first_name='+first_name+'&last_name='+last_name+'&user_id='+user_id+'&notification_code='+notification_code+'&publicKey='+publicKey;
+			var text = 'to='+to+'&subject='+subject+'&first_name='+first_name+'&last_name='+last_name+'&user_id='+user_id+'&notification_code='+notification_code+'&mobileNumber='+mobileNumber+'&publicKey='+publicKey;
 			
 			crypt.validateSignature(text, signature, privateKey, function(isValid){
             
@@ -180,6 +185,25 @@ module.exports.sendNotification = function (req, res){
 					if(4&parseInt(notification_code))
 					{
 						console.log("Send SMS");		
+						
+						var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
+										
+						request(smsURL, function (error, response, body) {
+
+							if(error) 
+							{
+								console.log('SMS Not Sent');
+								console.log(error);
+								sendResponse(req, res, 200, 29, "SMS Sending Error");
+								return;
+							}
+							
+							else if(response.statusCode == 200)
+							{
+								console.log('SMS Sent Successfully');
+							}
+						
+						})
 					}
 					
 					if(1&parseInt(notification_code))
@@ -338,7 +362,39 @@ module.exports.sendRejectBidNotification = function (req, res){
 
 					if(4&parseInt(notification_code))
 					{
-						console.log("Send SMS");		
+						console.log("Send SMS");
+						
+						for(var i=0; i<length; i++)
+						{
+							var singleJson = data[i].split("/"); 	
+							
+							var bidAmount = singleJson[3];				// Storing Amount
+							
+							var mobileNumber = singleJson[7];			// Storing Mobile Number
+							
+							var smsText = "Your Bid of "+bidAmount+" BTC has been rejected";
+							
+							var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
+										
+							request(smsURL, function (error, response, body) {
+
+								if(error) 
+								{
+									console.log('SMS Not Sent');
+									console.log(error);
+									sendResponse(req, res, 200, 29, "SMS Sending Error");
+									return;
+								}
+								
+								else if(response.statusCode == 200)
+								{
+									
+									console.log('SMS Sent Successfully');
+								}
+							
+							})
+							
+						}
 					}
 					
 					if(1&parseInt(notification_code))
