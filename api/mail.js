@@ -13,8 +13,12 @@ var from_who            = 'donotreply@searchtrade.com';						// Sender of Email
 var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key For Mailgun
 var domain              = 'searchtrade.com';								// Domain Name
 
+<<<<<<< HEAD
 var ip                  = 'http://192.168.2.26:5000';
 var ipn                 = 'http://192.168.2.15:5020';
+=======
+var ip                  = 'http://192.168.2.15:5020';
+>>>>>>> 0217e0a47dbc2534c02e1e90d25381f2864db6b9
 var mailgun             = new Mailgun({apiKey: api_key, domain: domain});	// Mailgun Object
 var io 					= require('./socket.js');
 
@@ -72,22 +76,22 @@ module.exports.sendmail = function (mailinfo, res) {
 // PHP Mail Functionality in Node
 module.exports.sendNotification = function (req, res){
 
-    var to                  = req.body.to;
-    var subject             = req.body.subject;
-    var email_body          = req.body.email_body;
-    
-    var first_name          = req.body.first_name;
-    var last_name           = req.body.last_name;
-    var user_id             = req.body.user_id;
-	var smsText				= req.body.smsText;
+  var to                  = req.body.to;
+  var subject             = req.body.subject;
+  var email_body          = req.body.email_body;
+
+  var first_name          = req.body.first_name;
+  var last_name           = req.body.last_name;
+  var user_id             = req.body.user_id;
+  var smsText				= req.body.smsText;
 	var mobileNumber		= req.body.mobileNumber;
-	
-    var notification_body   = req.body.notification_body;
+
+  var notification_body   = req.body.notification_body;
 	var notification_code	= req.body.notification_code;
-    
+
 	var publicKey			= req.body.publicKey;
 	var signature			= req.body.signature;
-	
+
 	// Validate Public Key
 	if(publicKey=="" || publicKey== null || publicKey==undefined)
 	{
@@ -103,7 +107,7 @@ module.exports.sendNotification = function (req, res){
 		master.sendResponse(req, res, 200, 1, "Mandatory field not found");
 		return;
 	}
-	
+
 	// Validate Signature
 	if(to=="" || to== null || to==undefined)
 	{
@@ -111,20 +115,20 @@ module.exports.sendNotification = function (req, res){
 		master.sendResponse(req, res, 200, 1, "Mandatory field not found");
 		return;
 	}
-	
+
 	if(!validateEmail(to))
 	{
 		console.log('Incorrect Email Format');
 		master.sendResponse(req, res, 200, 7, "Incorrect email id format");
 		return;
 	}
-	
+
 	var notification 		= first_name+" "+last_name+", "+notification_body;
-	
+
 	var query = {publicKey:publicKey,token:true};
-	
+
 	request.post({
-                                
+
         url: ip+'/api/getPvtKey',
         body: query,
         json: true,
@@ -134,16 +138,17 @@ module.exports.sendNotification = function (req, res){
 
         if (err)
         {
-            return console.error('Curl request Failed for register api: \n', err);
+          master.sendResponse(req, res, 404, 7, err);
+          console.error('Curl request Failed for register api: \n', err);
         }
-        
+
 		if(body.errCode == -1)
 		{
 			var privateKey = body.errMsg;
 			var text = 'to='+to+'&subject='+subject+'&first_name='+first_name+'&last_name='+last_name+'&user_id='+user_id+'&notification_code='+notification_code+'&mobileNumber='+mobileNumber+'&publicKey='+publicKey;
-			
+
 			crypt.validateSignature(text, signature, privateKey, function(isValid){
-            
+
 				// Signature Not Matched
 				if (!isValid)
 				{
@@ -151,13 +156,12 @@ module.exports.sendNotification = function (req, res){
 					sendResponse(req, res, 200, 14, "Invalid Signature");
 					return;
 				}
-				
 				else
 				{
 					if(2&parseInt(notification_code))
 					{
 						console.log("Send Email");
-						
+
 						var mailOptions = {
 							from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
 							to: to, 								            // List of Receivers
@@ -165,28 +169,28 @@ module.exports.sendNotification = function (req, res){
 							text: email_body,
 							html: email_body
 						};
-					
+
 						mailgun.messages().send(mailOptions, function(err, cb){
-							
+
 							//Error In Sending Email
 							if (err) {
-								
+
 								console.log('Mail Not Sent');
 								console.log(err);
 								sendResponse(req, res, 200, 29, "Email Sending Error");
 								return;
 
 							}
-							
+
 							console.log('Mail Sent Successfully');
-	
+
 						});
 					}
 
 					if(4&parseInt(notification_code))
 					{
-						console.log("Send SMS");		
-						
+						console.log("Send SMS");
+
 						var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
 										
 						request(smsURL, function (error, response, body) {
@@ -212,7 +216,7 @@ module.exports.sendNotification = function (req, res){
 						console.log("Push Notification");
 					}
 					
-					var notification_message = new notificationschema.notification_msg({ 
+					var notification_message = new notificationschema.notification_msg({
 						user_id: user_id, 	                    // User Id
 						notification_body: notification	        // Text
 					});
