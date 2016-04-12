@@ -14,11 +14,16 @@
   "license": "ISC",
   "homepage": "https://bitbucket.org/walletnode/notification-wallet#readme",
   "dependencies": {
+    "async": "^1.5.2",
     "body-parser": "^1.15.0",
+    "crypt": "0.0.1",
     "express": "^4.13.4",
+    "gcm": "^1.0.1",
     "mailgun-js": "^0.7.7",
     "mongoose": "^4.4.6",
+    "morgan": "^1.7.0",
     "request": "^2.69.0",
-    "socket.io": "^1.4.5"
+    "socket.io": "^1.4.5",
+    "token": "0.0.0"
   }
 }

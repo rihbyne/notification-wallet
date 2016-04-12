@@ -58,12 +58,27 @@ module.exports.sendVerificationEmail = function(req){
 
       console.log('mail callback success');
        
-      var notificationInfo = new notificationschema({
+      var notificationInfo = new notificationschema.notification_wallet({
         user_id : accountInfo._id,
         first_name : accountInfo.first_name,
-        last_name : accountInfo.last_name,
-        notification_body: 'Your SearchTrade account has been created.'
+        last_name : accountInfo.last_name
       });
+
+      var notificationMsg = new notificationschema.notification_msg({
+        user_id : accountInfo._id,
+        notification_body : 'Your account has been created successfully' 
+        
+      });
+
+      notificationMsg.save(function(err){
+        if(err)
+        {
+          console.log(err);
+          return err;
+        }
+
+        console.log('Message Saved SuccessFully');
+      }); 
 
       notificationInfo.save(function(err){
 
@@ -222,3 +237,36 @@ module.exports.resettedConfirmation = function(req){
   });
 
 }
+
+module.exports.getMyNotification = function(req,res){
+
+  var user_id = req.body.user_id;
+
+  notificationschema.notification_wallet
+  .find({'user_id':user_id})
+  .populate('user_id')
+  .exec(function(err, results){
+    if (err) {throw err};
+    console.log(results);
+    res.send(results);
+  });
+
+}
+
+// module.exports.populate = function(req,res){
+
+//   var user_id = req.body.user_id;
+
+//                // notification_wallet.user_id
+
+//   notificationschema.notification_msg
+//   .find({'user_id':user_id})
+//  // .populate('notification_msg.notification_body')
+//  .populate('read,created_at,notification_body,user_id,first_name,last_name')
+//   .exec(function(err, results){
+//     if (err) {throw err};
+//     console.log(results);
+//     res.send(results);
+//   });
+
+// }
