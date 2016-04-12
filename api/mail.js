@@ -14,11 +14,12 @@ var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key F
 var domain              = 'searchtrade.com';								// Domain Name
 
 var ip                  = 'http://192.168.2.26:5000';
+var ipn                 = 'http://192.168.2.15:5020';
 var mailgun             = new Mailgun({apiKey: api_key, domain: domain});	// Mailgun Object
 var io 					= require('./socket.js');
 
-var smsLoginId 			= '7827572892';
-var smsPass				= 'amit123456';
+var smsLoginId 			= '9320027660'; //'7827572892';
+var smsPass				= 'tagepuguz';	//'amit123456';
 var optins				= 'OPTINS';
 
 //var GCM 				= require('gcm').GCM;
@@ -251,7 +252,6 @@ module.exports.sendRejectBidNotification = function (req, res){
 	var async = require('async');
 
 	var data				= req.body.data;
-	var notification_code 	= req.body.notification_code;
 	var keyword 			= req.body.keyword;
 	var publicKey			= req.body.publicKey;
 	var signature			= req.body.signature;
@@ -299,7 +299,7 @@ module.exports.sendRejectBidNotification = function (req, res){
 		if(body.errCode == -1)
 		{
 			var privateKey = body.errMsg;
-			var text = 'data='+data+'&keyword='+keyword+'&notification_code='+notification_code+'&publicKey='+publicKey;
+			var text = 'data='+data+'&keyword='+keyword+'&publicKey='+publicKey;
 			
 			crypt.validateSignature(text, signature, privateKey, function(isValid){
 			
@@ -318,89 +318,105 @@ module.exports.sendRejectBidNotification = function (req, res){
 					data = data.replace(/\\/g,"");
 					data = data.split(",");
 					var length = data.length;
+					var email = [];
+					var amount = [];
 				
-					if(2&parseInt(notification_code))
+					for(var i=0; i<length; i++)
 					{
-						console.log("Send Email");
-						
-						for(var i=0; i<length; i++)
-						{
-							var singleJson = data[i].split("/"); 	
-
-							var bidRetEmail = singleJson[1];		// Storing Email 
-
-							var bidAmount = singleJson[3];			// Storing Amount
-							
-							var emailBody = '<div style="border:solid thin black;padding:5px"><div style="width:100%;text-align:left;min-height:50px;background-color:#25a2dc;padding: 1%;padding-bottom: 0px;"><img style="max-width:200px;" src="www.searchtrade.com/images/searchtrade_white.png"></img></div><p>Hello, <br/> <br/>Your bid of '+bidAmount+' BTC for the keyword #'+keyword+' on SearchTrade.com was not the highest bid and so it has been rejected.</p><p>Regards from SearchTrade team.<br><br>Product of SearchTrade.com Pte Ltd , Singapore<br><br></p></div>';
-						
-							var mailOptions = {
-								from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
-								to: bidRetEmail, 								    // List of Receivers
-								subject: "SearchTrade: Keyword buy order rejected", // Subject line
-								text: emailBody,
-								html: emailBody
-							};
-						
-							mailgun.messages().send(mailOptions, function(err, cb){
-								
-								//Error In Sending Email
-								if (err) {
-									
-									console.log('Mail Not Sent');
-									console.log(err);
-									sendResponse(req, res, 200, 29, "Email Sending Error");
-									return;
-
-								}
-								
-								console.log('Mail Sent Successfully');
-		
-							});
-							
-						}
-					}
-
-					if(4&parseInt(notification_code))
-					{
-						console.log("Send SMS");
-						
-						for(var i=0; i<length; i++)
-						{
-							var singleJson = data[i].split("/"); 	
-							
-							var bidAmount = singleJson[3];				// Storing Amount
-							
-							var mobileNumber = singleJson[7];			// Storing Mobile Number
-							
-							var smsText = "Your Bid of "+bidAmount+" BTC has been rejected";
-							
-							var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
-										
-							request(smsURL, function (error, response, body) {
-
-								if(error) 
-								{
-									console.log('SMS Not Sent');
-									console.log(error);
-									sendResponse(req, res, 200, 29, "SMS Sending Error");
-									return;
-								}
-								
-								else if(response.statusCode == 200)
-								{
-									
-									console.log('SMS Sent Successfully');
-								}
-							
-							})
-							
-						}
-					}
+						var singleJson 	= data[i].split("/"); 	
+						email[i] 		= singleJson[1];		// Storing Email 
+						amount[i]		= singleJson[3];
+					}	
 					
-					if(1&parseInt(notification_code))
-					{
-						console.log("Push Notification");
-					}
+					request.get({
+                                
+						url: ipn+'/api/subrejectbid/users',
+						qs: {user_email_container:JSON.stringify(email)},
+						headers: {"content-type": "application/json"}
+						
+					},function optionalCallback(err, httpResponse, body){
+						
+						var result = JSON.parse(body);
+						var resultLength = result.errMsg.length;
+						
+						for(var j=0; j<resultLength; j++)
+						{
+							var notification_code = result.errMsg[j].reject_bid_perms;
+							
+							if(2&parseInt(notification_code))
+							{
+								console.log("Send Email");
+								
+								var bidRetEmail = result.errMsg[j].email;		// Storing Email 
+
+								var bidAmount = amount[j];						// Storing Amount
+								
+								var emailBody = '<div style="border:solid thin black;padding:5px"><div style="width:100%;text-align:left;min-height:50px;background-color:#25a2dc;padding: 1%;padding-bottom: 0px;"><img style="max-width:200px;" src="www.searchtrade.com/images/searchtrade_white.png"></img></div><p>Hello, <br/> <br/>Your bid of '+bidAmount+' BTC for the keyword #'+keyword+' on SearchTrade.com was not the highest bid and so it has been rejected.</p><p>Regards from SearchTrade team.<br><br>Product of SearchTrade.com Pte Ltd , Singapore<br><br></p></div>';
+							
+								var mailOptions = {
+									from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
+									to: bidRetEmail, 								    // List of Receivers
+									subject: "SearchTrade: Keyword buy order rejected", // Subject line
+									text: emailBody,
+									html: emailBody
+								};
+							
+								mailgun.messages().send(mailOptions, function(err, cb){
+									
+									//Error In Sending Email
+									if (err) {
+										
+										console.log('Mail Not Sent');
+										console.log(err);
+										sendResponse(req, res, 200, 29, "Email Sending Error");
+										return;
+
+									}
+									
+									console.log('Mail Sent Successfully');
+			
+								});
+							}
+							
+							if(4&parseInt(notification_code))
+							{
+								console.log("Send SMS");	
+								
+								var bidAmount = amount[j];								// Storing Amount
+								
+								var mobileNumber = result.errMsg[j].mobile_number;		// Storing Mobile Number
+								console.log(mobileNumber);
+								
+								var smsText = "Your Bid of "+bidAmount+" BTC has been rejected for keyword "+keyword;
+								
+								var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
+											
+								request(smsURL, function (error, response, body) {
+
+									if(error) 
+									{
+										console.log('SMS Not Sent');
+										console.log(error);
+										sendResponse(req, res, 200, 29, "SMS Sending Error");
+										return;
+									}
+									
+									else if(response.statusCode == 200)
+									{
+										console.log('SMS Sent Successfully');
+									}
+								
+								})
+
+							}
+							
+							if(1&parseInt(notification_code))
+							{
+								console.log("Push Notification");
+							}	
+							
+						}					
+					})
 					
 					async.series([
 					
