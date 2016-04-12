@@ -13,12 +13,10 @@ var from_who            = 'donotreply@searchtrade.com';						// Sender of Email
 var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key For Mailgun
 var domain              = 'searchtrade.com';								// Domain Name
 
-<<<<<<< HEAD
+
 var ip                  = 'http://192.168.2.26:5000';
 var ipn                 = 'http://192.168.2.15:5020';
-=======
-var ip                  = 'http://192.168.2.15:5020';
->>>>>>> 0217e0a47dbc2534c02e1e90d25381f2864db6b9
+
 var mailgun             = new Mailgun({apiKey: api_key, domain: domain});	// Mailgun Object
 var io 					= require('./socket.js');
 
