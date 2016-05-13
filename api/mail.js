@@ -99,7 +99,8 @@ module.exports.sendEmail = function (req, res){
 		}
 
 		console.log('Mail Sent Successfully');
-
+		sendResponse(req, res, 200, -1, "Success");
+		
 	});
 	
 }
