@@ -44,6 +44,7 @@ app.post('/secure/sendNotification', mailer.sendNotification);
 app.post('/secure/sendRejectBidNotification', mailer.sendRejectBidNotification);
 // app.post('/secure/getNotificationStatus', mailer.getNotificationStatus);
 app.post('/secure/getMyNotification', notification.getMyNotification);
+app.post('/secure/sendEmail', mailer.sendEmail);
 //app.post('/secure/socketEventTrigger', socket_func);
 
 /* error handling for 404 routes */

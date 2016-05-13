@@ -71,20 +71,53 @@ module.exports.sendmail = function (mailinfo, res) {
 
 };
 
+// Mis Payment Email
+module.exports.sendEmail = function (req, res){
+
+	var to                  = req.body.to;
+	var subject             = req.body.subject;
+	var email_body          = req.body.email_body;
+
+	var mailOptions = {
+		from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
+		to: to, 								            // List of Receivers
+		subject: subject, 		                            // Subject line
+		text: email_body,
+		html: email_body
+	};
+
+	mailgun.messages().send(mailOptions, function(err, cb){
+
+		//Error In Sending Email
+		if (err) {
+
+			console.log('Mail Not Sent');
+			console.log(err);
+			sendResponse(req, res, 200, 29, "Email Sending Error");
+			return;
+
+		}
+
+		console.log('Mail Sent Successfully');
+
+	});
+	
+}
+
 // PHP Mail Functionality in Node
 module.exports.sendNotification = function (req, res){
 
-  var to                  = req.body.to;
-  var subject             = req.body.subject;
-  var email_body          = req.body.email_body;
+	var to                  = req.body.to;
+	var subject             = req.body.subject;
+	var email_body          = req.body.email_body;
 
-  var first_name          = req.body.first_name;
-  var last_name           = req.body.last_name;
-  var user_id             = req.body.user_id;
-  var smsText				= req.body.smsText;
+	var first_name          = req.body.first_name;
+	var last_name           = req.body.last_name;
+	var user_id             = req.body.user_id;
+	var smsText				= req.body.smsText;
 	var mobileNumber		= req.body.mobileNumber;
 
-  var notification_body   = req.body.notification_body;
+	var notification_body   = req.body.notification_body;
 	var notification_code	= req.body.notification_code;
 
 	var publicKey			= req.body.publicKey;
@@ -106,7 +139,7 @@ module.exports.sendNotification = function (req, res){
 		return;
 	}
 
-	// Validate Signature
+	// Validate To
 	if(to=="" || to== null || to==undefined)
 	{
 		console.log('Email is Missing');
