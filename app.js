@@ -1,22 +1,34 @@
 "use strict";
 
 //var socketFile			= require('./socket.js');
-var mongo               = require('./config/mongo.js');
-var notificationschema  = require('./model/notification_model.js');
-var app                 = require('express')();
+var express = require('express')
+var fs 					        = require('fs');
 var http              	= require('http');
-var fs 					= require('fs');
 var bodyParser          = require('body-parser');
+var debug = require('debug')('Express4')
+var morgan    			= require('morgan');            				// Log To Console
+var cookieParser = require('cookie-parser')
+var bformat = require('bunyan-format')
+// var io 					= require('socket.io');
+
+require('dotenv').config() // loads project specific process.env settings from .env
+var log = require('./config/logging')()
+require('./config/db.js') //keep the connection open to db when app boots/reboots
+
+var notificationschema  = require('./model/notification_model.js');
 var notification        = require('./api/notification.js');
 var mailer              = require('./api/mail.js');                     // Mail Functionality
-var morgan    			= require('morgan');            				// Log To Console
-// var io 					= require('socket.io');
 var io 					= require('./api/socket.js');
 //var socket_func 		= require('./socket.js')
+
+/* create http server and pass the express appln to it */
+var app = require('express')()
+var server = require('http').createServer(app)
 
 app.use(morgan('dev'));													// Morgan To log Request To Console
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
+app.use(cookieParser())
 
 // app.set('view engine', 'ejs');
 
@@ -34,6 +46,46 @@ app.post('/secure/sendRejectBidNotification', mailer.sendRejectBidNotification);
 app.post('/secure/getMyNotification', notification.getMyNotification);
 //app.post('/secure/socketEventTrigger', socket_func);
 
-app = app.listen(4100);
-io 	= io.listen(app);
-io.attach(app);
+/* error handling for 404 routes */
+app.use(function (req, res, next) {
+  var err = new Error('request not found')
+  err.status = 404
+  next(err)
+})
+
+// error handler middleware returns stacktraces
+if (app.get('env') === 'development') {
+  app.use(function (err, req, res, next) {
+    res.status(err.status || 500)
+    res.render('error.html', {
+      message: err.message,
+      error: err
+    })
+  })
+}
+
+// production env error handler
+// In prod, dont return stacktrace to the browser
+app.use(function (err, req, res, next) {
+  res.status(err.status || 500)
+  res.render('error.html', {
+    message: err.message,
+    error: {}
+  })
+})
+
+app.use(function (req, res, next) {
+  log.info('==================================')
+  log.info(req.url)
+  next()
+})
+
+app.set('port', process.env.NODE_SERVER_PORT || 4100)
+
+var notifyServer = app.listen(app.get('port'), process.env.NODE_SERVER_IP || '127.0.0.1', function () {
+  log.info('server listening on address ' + notifyServer.address().address + ':' + notifyServer.address().port)
+  debug('server listening on port ' + notifyServer.address().port)
+})
+
+io 	= io.listen(server);
+io.attach(server);
