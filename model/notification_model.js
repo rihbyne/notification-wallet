@@ -11,9 +11,9 @@ var notification_wallet = mongoose.Schema({
 
 var notification_msg = mongoose.Schema({
 
-	user_id: 					      {type: String},           // Notification Body
+	user_id: 					      {type: String},           // User Id
     notification_body: 				  {type: String},           // Notification Body
-    read: 							  {type: Boolean, default:0},
+    read: 							  {type: Boolean, default:false},
     created_at: 					  {type: Date, default:Date.now()} 
 
 }, { versionKey: false });

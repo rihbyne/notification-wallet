@@ -14,7 +14,7 @@ var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key F
 var domain              = 'searchtrade.com';								// Domain Name
 
 
-var ip                  = 'http://192.168.2.26:5000';
+var ip                  = 'http://localhost:4020';
 var ipn                 = 'http://192.168.2.15:5020';
 
 var mailgun             = new Mailgun({apiKey: api_key, domain: domain});	// Mailgun Object
@@ -23,6 +23,7 @@ var io 					= require('./socket.js');
 var smsLoginId 			= '9320027660'; //'7827572892';
 var smsPass				= 'tagepuguz';	//'amit123456';
 var optins				= 'OPTINS';
+var async				= require('async');
 
 //var GCM 				= require('gcm').GCM;
 //var gcm 				= new GCM(AIzaSyCO79TE_Cdnl2KMLbb4bxxs-P5DrsAI4WI);
@@ -72,19 +73,82 @@ module.exports.sendmail = function (mailinfo, res) {
 };
 
 // PHP Mail Functionality in Node
+// module.exports.sendPHPmail = function (req, res){
+    
+    // var to                  = req.body.to;
+    // var subject             = req.body.subject;
+    // var message             = req.body.message;
+    
+    // var first_name          = req.body.first_name;
+    // var last_name           = req.body.last_name;
+    // var user_id             = req.body.user_id;
+    // var notification_body   = req.body.notification_body;
+    
+    // notification_body = first_name+" "+last_name+", "+notification_body;
+    
+    // var mailOptions = {
+		// from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
+		// to: to, 								            // List of Receivers
+		// subject: subject, 		                            // Subject line
+		// text: message,									    // Text
+		// html: message
+	// };
+    
+    // mailgun.messages().send(mailOptions, function(err, cb){
+        
+         // Error In Sending Email
+        // if (err) {
+            
+            // console.log('Mail Not Sent');
+            // console.log(err);
+            // sendResponse(req, res, 200, 29, "Email Sending Error");
+            // return;
+
+        // } else {
+            
+        //    console.log('Mail Sent Successfully');
+            
+            // var notification_message = new notificationschema.notification_msg({ 
+                // user_id: user_id, 	                     // User Id
+                // first_name: first_name, 				 // User First Name
+                // last_name: last_name, 		             // User last Name
+                // notification_body: notification_body,	 // Text
+            // });
+            
+            // notification_message.save(function(err){
+
+                // if(err)
+                // {
+                  // console.log(err);
+                  // return err;
+                // }
+
+                // console.log('Saved SuccessFully');
+                // sendResponse(req, res, 200, -1, "Success");
+
+            // });
+            
+        // }    
+        
+    // });
+    
+// }
+
+
+// PHP Mail Functionality in Node
 module.exports.sendNotification = function (req, res){
 
-  var to                  = req.body.to;
-  var subject             = req.body.subject;
-  var email_body          = req.body.email_body;
+	var to                  = req.body.to;
+	var subject             = req.body.subject;
+	var email_body          = req.body.email_body;
 
-  var first_name          = req.body.first_name;
-  var last_name           = req.body.last_name;
-  var user_id             = req.body.user_id;
-  var smsText				= req.body.smsText;
+	var first_name          = req.body.first_name;
+	var last_name           = req.body.last_name;
+	var user_id             = req.body.user_id;
+	var smsText				= req.body.smsText;
 	var mobileNumber		= req.body.mobileNumber;
 
-  var notification_body   = req.body.notification_body;
+	var notification_body   = req.body.notification_body;
 	var notification_code	= req.body.notification_code;
 
 	var publicKey			= req.body.publicKey;
@@ -102,7 +166,7 @@ module.exports.sendNotification = function (req, res){
 	if(signature=="" || signature== null || signature==undefined)
 	{
 		console.log('Signature is Missing');
-		master.sendResponse(req, res, 200, 1, "Mandatory field not found");
+		sendResponse(req, res, 200, 1, "Mandatory field not found");
 		return;
 	}
 
@@ -110,14 +174,14 @@ module.exports.sendNotification = function (req, res){
 	if(to=="" || to== null || to==undefined)
 	{
 		console.log('Email is Missing');
-		master.sendResponse(req, res, 200, 1, "Mandatory field not found");
+		sendResponse(req, res, 200, 1, "Mandatory field not found");
 		return;
 	}
 
 	if(!validateEmail(to))
 	{
 		console.log('Incorrect Email Format');
-		master.sendResponse(req, res, 200, 7, "Incorrect email id format");
+		sendResponse(req, res, 200, 7, "Incorrect email id format");
 		return;
 	}
 
@@ -136,7 +200,7 @@ module.exports.sendNotification = function (req, res){
 
         if (err)
         {
-          master.sendResponse(req, res, 404, 7, err);
+          sendResponse(req, res, 404, 7, err);
           console.error('Curl request Failed for register api: \n', err);
         }
 
@@ -226,10 +290,29 @@ module.exports.sendNotification = function (req, res){
 						  console.log(err);
 						  return err;
 						}
-						
-						console.log('Saved SuccessFully');
-						sendResponse(req, res, 200, -1, "Success");						
-						io.emit("DatabaseEvent",{ signal : 'true' });
+							
+						// request.post({
+
+							// url: 'http://192.168.2.11:4000/setpost',
+							// body: {userid:user_id,post_description:notification,privacy_setting:2},
+							// json: true,
+							// headers: {"content-type": "application/json"}
+
+						// },function optionalCallback(err, httpResponse, body){
+
+							// if (err)
+							// {
+								// sendResponse(req, res, 404, 7, err);
+								// console.error('Curl request Failed for register api: \n', err);
+								// return;
+							// }
+							
+							console.log('Post Successfully Set');
+							console.log('Saved SuccessFully');
+							sendResponse(req, res, 200, -1, "Success");						
+							io.emit("DatabaseEvent",{ signal : 'true' });
+							
+						// })						
 
 					});
 					
@@ -241,7 +324,7 @@ module.exports.sendNotification = function (req, res){
 		
 		else
 		{
-			master.sendResponse(req, res, 200, body.errCode, body.errMsg);
+			sendResponse(req, res, 200, body.errCode, body.errMsg);
 		}
         
     });
@@ -270,7 +353,7 @@ module.exports.sendRejectBidNotification = function (req, res){
 	if(signature =="" || signature == null || signature == undefined)
 	{
 		console.log('Signature is Missing');
-		master.sendResponse(req, res, 200, 1, "Mandatory field not found");
+		sendResponse(req, res, 200, 1, "Mandatory field not found");
 		return;
 	}
 	
@@ -278,7 +361,7 @@ module.exports.sendRejectBidNotification = function (req, res){
 	if(data == "" || data == undefined || data == null)
 	{
 		console.log('No Data Received');
-		master.sendResponse(req, res, 200, -1, "Success");
+		sendResponse(req, res, 200, -1, "Success");
 		return;
 	}
 	
@@ -451,16 +534,38 @@ module.exports.sendRejectBidNotification = function (req, res){
 										console.log(err);
 										sendResponse(req, res, 200, 5, "Database Error");
 										return;
-									}
+									}	
 									
 									if(result)
 									{
-										if(length-p==1)
-										{
-											callback();
-										}	
-										
-										p++;
+									
+										request.post({
+
+											url: 'http://192.168.2.23:4000/setpost',
+											body: {userid:user_id,post_description:notification_message.notification_body,privacy_setting:2},
+											json: true,
+											headers: {"content-type": "application/json"}
+
+										},function optionalCallback(err, httpResponse, body){
+
+											if (err)
+											{
+												sendResponse(req, res, 404, 7, err);
+												console.error('Curl request Failed for register api: \n', err);
+												return;
+											}
+											
+											console.log('Post Successfully Set');
+											
+											if(length-p==1)
+											{
+												callback();
+											}	
+											
+											p++;
+											
+										})		
+									
 									}
 
 								});
@@ -492,29 +597,288 @@ module.exports.sendRejectBidNotification = function (req, res){
 }
 
 
-// Getting Notification Status
-module.exports.getNotificationStatus = function (email, cb){
-    
-    var email = {email:email};
-    
-    request.post({
-                                
-        url: ip+'/secure/getNotificationStatus',
-        body: email,
+// module.exports.stupdatenotify = function (req, res){
+
+	// var userid = req.params.userid;
+	
+	// notificationschema.notification_msg
+	// .update({user_id:userid},{$set:{read:true}},{multi:true})
+	// .exec(function(err, result){
+	
+		// if(err)
+		// {
+			// console.log(err)
+			// sendResponse(req, res, 200, 5, 'Database Error');
+			// return;
+		// }
+		
+		// if(result==null || result=="" || result==undefined)
+		// {
+			// sendResponse(req, res, 200, -1, 'No Notification Found');
+			// return;
+		// }
+		
+		// console.log('Data Updated Successfully');
+		// sendResponse(req, res, 200, -1, 'Success');
+	
+	// })
+
+// }
+
+module.exports.stdeletenotify = function (req, res){
+
+	var id = req.query.id;
+	var userid = req.params.userid;
+	
+	id = JSON.parse(id);
+	
+	// id = id.replace(/\[/g,"");
+	// id = id.replace(/\]/g,"");
+	// id = id.replace(/\\/g,"");
+	// id = id.split(",");
+	
+	if(!Array.isArray(id))
+	{
+		console.log('Invalid Input (Document Id Array)')
+		sendResponse(req, res, 500, 5, 'Invalid Input Parameter');
+		return;
+	}
+	
+	var data = [];
+	
+	async.each(id, function(singleData, callback){
+					
+		id	= 	singleData;		// Storing Document id
+		
+		console.log(id);
+		
+		notificationschema.notification_msg
+		.findOneAndRemove({$and:[{ _id: id},{user_id:userid}]})
+		.exec(function(err, result) {
+			
+			if(err)
+			{
+				console.log(err)
+				sendResponse(req, res, 500, 5, 'Database Error');
+				return;
+			}
+		
+			if(result=="" || result==undefined || result==null)
+			{
+				callback();
+			}
+			
+			else
+			{
+				data.push(result._id);
+				callback();
+			}
+		
+		})
+		
+	},function(err){
+						
+		if(err)
+		{
+			console.log(error);
+			sendResponse(req, res, 500, 5, "Databse Error");
+			return;
+		}
+		
+		else
+		{
+			sendResponse(req, res, 200, -1, {data:data})
+		}
+	})
+	
+	
+	
+	// notificationschema.notification_msg
+	// .findOneAndRemove({ _id: id})
+	// .exec(function(err, result) {
+	
+		// if(err)
+		// {
+			// console.log(err)
+			// sendResponse(req, res, 200, 5, 'Database Error');
+			// return;
+		// }
+		
+		// if(result==null || result=="" || result==undefined)
+		// {
+			// sendResponse(req, res, 200, -1, 'No Notification Found');
+			// return;
+		// }
+		
+		// console.log('Data Removed');
+		// sendResponse(req, res, 200, -1, 'Success');
+	
+	// })
+
+}
+
+module.exports.stgetnotifycount = function (req, res){
+	
+	var userid 		= req.params.userid;
+	var publicKey	= req.query.publicKey;
+	var signature	= req.query.signature;
+	
+	var query = {publicKey:publicKey,token:true};
+
+	request.post({
+
+        url: ip+'/api/getPvtKey',
+        body: query,
         json: true,
         headers: {"content-type": "application/json"}
 
     },function optionalCallback(err, httpResponse, body){
-
-        if (err)
+	
+		if (err)
         {
             return console.error('Curl request Failed for register api: \n', err);
         }
         
-        cb(body.errMsg);
-        
-    });
+		if(body.errCode == -1)
+		{
+			var privateKey = body.errMsg;
+			var text = 'userid='+userid+'&publicKey='+publicKey;
+			
+			crypt.validateSignature(text, signature, privateKey, function(isValid){
+			
+				// Signature Not Matched
+				if (!isValid)
+				{
+					console.log('Invalid Signature');
+					sendResponse(req, res, 200, 14, "Invalid Signature");
+					return;
+				}
+				
+				else
+				{
+					notificationschema.notification_msg
+					.count({$and:[{user_id:userid},{read:false}]})
+					.exec(function(err, result){
+					
+						if(err)
+						{
+							console.log(err)
+							sendResponse(req, res, 500, 5, 'Database Error');
+							return;
+						}
+						
+						console.log('Count : '+result);
+						sendResponse(req, res, 200, -1, {count:result});
+						
+					})
+				}
+				
+			})
+		
+		}
+	
+	})
 
 }
 
-var getNotificationStatus = module.exports.getNotificationStatus;
+module.exports.stgetnotifydata = function (req, res){
+	
+	var userid 	= req.params.userid;
+	var from	= req.query.from;
+	//var publicKey	= req.query.publicKey;
+	//var signature	= req.query.signature;
+	
+	if(from == "" || from == null || from == undefined)
+	{
+		var date = new Date()
+		from = date.toISOString();
+	}
+	
+	var isoDateRegex = new RegExp('/(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})\.\d{3}Z/');
+	// var isoDateRegex = new RegExp('/(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})\+.+(\d{3})\+Z/');
+	
+	if(!/(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})\.\d{3}Z/.test(from))
+	{
+		sendResponse(req, res, 403, 5, 'Invalid Date Format');
+		
+	} else{
+		notificationschema.notification_msg
+		.find({$and:[{user_id:userid},{created_at:{$lt:from}}]})
+		.sort({created_at:-1})
+		.limit(50)
+		.exec(function(err, result){
+		
+			if(err)
+			{
+				console.log(err)
+				sendResponse(req, res, 500, 5, 'Database Error');
+				return;
+				
+			} else {
+			
+				console.log('Result : '+result);
+				console.log(Array.isArray(result));
+				
+				var length = result.length;
+				var index;
+				
+				if(length<50)
+				{
+					index = parseInt(length);
+				}
+				
+				else
+				{
+					index = 49;
+				}
+				
+				notificationschema.notification_msg
+				.update({$and:[{user_id:userid},{created_at:{$gte:result[index-1].created_at}},{created_at:{$lte:result[0].created_at}}]},{$set:{read:true}},{multi:true})
+				.exec(function(err, retVal){
+				
+					if(err)
+					{
+						console.log(err)
+						sendResponse(req, res, 500, 5, 'Database Error');
+						return;
+						
+					} else {
+					
+						sendResponse(req, res, 200, -1, result);
+						return;
+					}
+				})
+			
+			}
+			
+		})
+	}
+}
+
+
+// Getting Notification Status
+// module.exports.getNotificationStatus = function (email, cb){
+    
+    // var email = {email:email};
+    
+    // request.post({
+                                
+        // url: ip+'/secure/getNotificationStatus',
+        // body: email,
+        // json: true,
+        // headers: {"content-type": "application/json"}
+
+    // },function optionalCallback(err, httpResponse, body){
+
+        // if (err)
+        // {
+            // return console.error('Curl request Failed for register api: \n', err);
+        // }
+        
+        // cb(body.errMsg);
+        
+    // });
+
+// }
+
+// var getNotificationStatus = module.exports.getNotificationStatus;
