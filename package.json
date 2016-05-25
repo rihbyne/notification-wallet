@@ -19,6 +19,7 @@
     "crypt": "0.0.1",
     "express": "^4.13.4",
     "gcm": "^1.0.1",
+    "lodash": "^4.13.0",
     "mailgun-js": "^0.7.7",
     "mongoose": "^4.4.6",
     "morgan": "^1.7.0",

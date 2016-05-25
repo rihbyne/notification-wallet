@@ -9,6 +9,7 @@ var fs 							= require('fs');
 var bodyParser          		= require('body-parser');
 var notification        		= require('./api/notification.js');
 var social_notification        	= require('./api/social_notification.js');
+var social_mention_notification = require('./api/social_mention_notification.js');
 var mailer              		= require('./api/mail.js');                     // Mail Functionality
 var morgan    					= require('morgan');            				// Log To Console
 // var io 						= require('socket.io');
@@ -48,11 +49,11 @@ app.get('/socialnotify/user/:userid', social_notification.socialgetnotifydata);
 app.get('/socialnotify/user/:userid/count', social_notification.socialgetnotifycount);
 
 // Social Mention Notification
-app.post('/socialmention/socialMentionNotification', social_notification.socialMentionNotification);
-// app.delete('/socialmention/user/:userid', social_notification.socialdeletenotify);
-// app.get('/socialmention/user/:userid', social_notification.socialgetnotifydata);
-// app.get('/socialmention/user/:userid/count', social_notification.socialgetnotifycount);
-// app.put('/socialmention/user/:userid/count', social_notification.socialgetnotifycount);
+app.post('/socialmention/user', social_mention_notification.socialMentionNotification);
+app.delete('/socialmention/user/:userid', social_mention_notification.deleteSocialNotify);
+app.get('/socialmention/user/:userid', social_mention_notification.getsocialnotifydata);
+app.get('/socialmention/user/:userid/count', social_mention_notification.countSocialMentionNotification);
+// app.put('/socialmention/user/:userid', social_notification.updateSocialMentionNotify);
 
 
 // ******************************************************************** //
