@@ -147,6 +147,7 @@ module.exports.sendNotification = function (req, res){
 	var user_id             = req.body.user_id;
 	var smsText				= req.body.smsText;
 	var mobileNumber		= req.body.mobileNumber;
+	var type				= req.body.type
 
 	var notification_body   = req.body.notification_body;
 	var notification_code	= req.body.notification_code;
@@ -280,6 +281,7 @@ module.exports.sendNotification = function (req, res){
 					
 					var notification_message = new notificationschema.notification_msg({
 						user_id: user_id, 	                    // User Id
+						type: type, 	                    	// Type
 						notification_body: notification	        // Text
 					});
 
@@ -524,6 +526,7 @@ module.exports.sendRejectBidNotification = function (req, res){
 								
 								var notification_message = new notificationschema.notification_msg({ 
 									user_id: user_id, 	                    													// User Id
+									type: "Reject Bid",
 									notification_body: "Your bid of "+bidAmount+"BTC has been rejected on keyword #"+keyword   	// Text
 								});
 
@@ -720,6 +723,7 @@ module.exports.stdeletenotify = function (req, res){
 module.exports.stgetnotifycount = function (req, res){
 	
 	var userid 		= req.params.userid;
+	var type		= req.params.type;
 	var publicKey	= req.query.publicKey;
 	var signature	= req.query.signature;
 	
@@ -756,8 +760,18 @@ module.exports.stgetnotifycount = function (req, res){
 				
 				else
 				{
+					if(type=='All' || type=='all' || type=='ALL')
+					{
+						query = {$and:[{user_id:userid},{read:false}]}
+					}
+					
+					else
+					{
+						query = {$and:[{user_id:userid},{type:type},{read:false}]}
+					}
+				
 					notificationschema.notification_msg
-					.count({$and:[{user_id:userid},{read:false}]})
+					.count(query)
 					.exec(function(err, result){
 					
 						if(err)
@@ -785,6 +799,8 @@ module.exports.stgetnotifydata = function (req, res){
 	
 	var userid 	= req.params.userid;
 	var from	= req.query.from;
+	var type 	= req.query.type;
+	var query = "";
 	//var publicKey	= req.query.publicKey;
 	//var signature	= req.query.signature;
 	
@@ -802,8 +818,19 @@ module.exports.stgetnotifydata = function (req, res){
 		sendResponse(req, res, 403, 5, 'Invalid Date Format');
 		
 	} else{
+	
+		if(type=='All' || type=='all' || type=='ALL')
+		{
+			query = {$and:[{user_id:userid},{created_at:{$lt:from}}]}
+		}
+		
+		else
+		{
+			query = {$and:[{user_id:userid},{type:type},{created_at:{$lt:from}}]}
+		}
+	
 		notificationschema.notification_msg
-		.find({$and:[{user_id:userid},{created_at:{$lt:from}}]})
+		.find(query)
 		.sort({created_at:-1})
 		.limit(50)
 		.exec(function(err, result){
