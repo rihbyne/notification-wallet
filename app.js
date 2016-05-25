@@ -17,6 +17,8 @@ require('./config/db.js') //keep the connection open to db when app boots/reboot
 
 var notificationschema  = require('./model/notification_model.js');
 var notification        = require('./api/notification.js');
+var social_notification        	= require('./api/social_notification.js');
+var social_mention_notification = require('./api/social_mention_notification.js');
 var mailer              = require('./api/mail.js');                     // Mail Functionality
 var io 					= require('./api/socket.js');
 //var socket_func 		= require('./socket.js')
@@ -36,14 +38,42 @@ app.use(cookieParser())
   // res.sendFile(__dirname + '/index.html');
 // });
 
+// ******************************************************************** //
+
+// ST Default Email
 app.post('/secure/sendVerificationEmail', notification.sendVerificationEmail);
 app.post('/secure/sendforgotpassword', notification.sendforgotpassword);
 app.post('/secure/changePassEmail', notification.changePassEmail);
 app.post('/secure/resettedConfirmation', notification.resettedConfirmation);
-app.post('/secure/sendNotification', mailer.sendNotification);
-app.post('/secure/sendRejectBidNotification', mailer.sendRejectBidNotification);
+
+// St Notification
+app.post('/stnotify/sendnotification', mailer.sendNotification);
+app.post('/stnotify/sendRejectBidNotification', mailer.sendRejectBidNotification);
+app.delete('/stnotify/user/:userid', mailer.stdeletenotify);
+app.get('/stnotify/user/:userid', mailer.stgetnotifydata);
+app.get('/stnotify/user/:userid/count', mailer.stgetnotifycount)
+
+// Social Simple Notification
+app.post('/socialnotify/socialNotification', social_notification.socialNotification);
+app.post('/socialnotify/followNotification', social_notification.followNotification);
+app.delete('/socialnotify/user/:userid', social_notification.socialdeletenotify);
+app.get('/socialnotify/user/:userid', social_notification.socialgetnotifydata);
+app.get('/socialnotify/user/:userid/count', social_notification.socialgetnotifycount);
+
+// Social Mention Notification
+app.post('/socialmention/user', social_mention_notification.socialMentionNotification);
+app.delete('/socialmention/user/:userid', social_mention_notification.deleteSocialNotify);
+app.get('/socialmention/user/:userid', social_mention_notification.getsocialnotifydata);
+app.get('/socialmention/user/:userid/count', social_mention_notification.countSocialMentionNotification);
+// app.put('/socialmention/user/:userid', social_notification.updateSocialMentionNotify);
+
+
+// ******************************************************************** //
+
+
+// app.post('/secure/sendPHPmail', mailer.sendPHPmail);
 // app.post('/secure/getNotificationStatus', mailer.getNotificationStatus);
-app.post('/secure/getMyNotification', notification.getMyNotification);
+//app.post('/secure/getMyNotification', notification.getMyNotification);
 app.post('/secure/sendEmail', mailer.sendEmail);
 //app.post('/secure/socketEventTrigger', socket_func);
 
