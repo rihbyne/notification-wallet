@@ -8,6 +8,7 @@ var http 				= require('http');
 var Mailgun             = require('mailgun-js');							// For Emails (Mailgun Module)
 var request             = require('request');                               // Request Module
 var crypt               = require("../config/crypt");			    		// Crypt Connectivity.
+var util				= require('../helpers/util.js');					// Master Functionality
 
 var from_who            = 'donotreply@searchtrade.com';						// Sender of Email
 var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key For Mailgun
@@ -83,6 +84,7 @@ module.exports.socialMentionNotification = function (req, res){
 
 	var post_id				= req.body.post_id;
 	var type 				= req.body.type;
+	var category 			= req.body.category;
 	
 	var publicKey			= req.body.publicKey;
 	var signature			= req.body.signature;
@@ -163,65 +165,82 @@ module.exports.socialMentionNotification = function (req, res){
 						
 						temp.push(obj);
 						
-						if(1&parseInt(preference))
-						{
-							console.log("Push Notification");	
+						var dataRecord = {
+						
+							notification_code	: preference,
+							to					: email,
+							subject				: subject,
+							email_body			: email_body,
+							smsText				: smsText,
+							mobileNumber		: mobileNumber
+						
 						}
 						
-						if(2&parseInt(preference))
-						{
-							console.log("Send Email");
+						util.masterNotification(dataRecord, function(resultResponse){
 						
-							var mailOptions = {
-								from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
-								to: email, 								    		// List of Receivers
-								subject: subject, // Subject line
-								text: email_body,
-								html: email_body
-							};
+							callback();
 						
-							mailgun.messages().send(mailOptions, function(err, cb){
+						})
+						
+						// if(1&parseInt(preference))
+						// {
+							// console.log("Push Notification");	
+						// }
+						
+						// if(2&parseInt(preference))
+						// {
+							// console.log("Send Email");
+						
+							// var mailOptions = {
+								// from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
+								// to: email, 								    		// List of Receivers
+								// subject: subject, 									// Subject line
+								// text: email_body,
+								// html: email_body
+							// };
+						
+							// mailgun.messages().send(mailOptions, function(err, cb){
 								
-								//Error In Sending Email
-								if (err) {
+								// Error In Sending Email
+								// if (err) {
 									
-									console.log('Mail Not Sent');
-									console.log(err);
-									sendResponse(req, res, 200, 29, "Email Sending Error");
-									return;
+									// console.log('Mail Not Sent');
+									// console.log(err);
+									// sendResponse(req, res, 200, 29, "Email Sending Error");
+									// return;
 
-								}
+								// }
 								
-								console.log('Mail Sent Successfully');
+								// console.log('Mail Sent Successfully');
 		
-							});
-						}
+							// });
+						// }
 						
-						if(4&parseInt(preference))
-						{
-							console.log("Send SMS");
+						// if(4&parseInt(preference))
+						// {
+							// console.log("Send SMS");
 
-							var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
+							// var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
 											
-							request(smsURL, function (error, response, body) {
+							// request(smsURL, function (error, response, body) {
 
-								if(error) 
-								{
-									console.log('SMS Not Sent');
-									console.log(error);
-									sendResponse(req, res, 200, 29, "SMS Sending Error");
-									return;
-								}
+								// if(error) 
+								// {
+									// console.log('SMS Not Sent');
+									// console.log(error);
+									// sendResponse(req, res, 200, 29, "SMS Sending Error");
+									// return;
+								// }
 								
-								else if(response.statusCode == 200)
-								{
-									console.log('SMS Sent Successfully');
-								}
+								// else if(response.statusCode == 200)
+								// {
+									// console.log('SMS Sent Successfully');
+								// }
 							
-							})
-						}
+							// })
+						// }
 
-						callback();
+						// callback();
 						
 					},function(err){
 						
@@ -236,10 +255,11 @@ module.exports.socialMentionNotification = function (req, res){
 						{	
 							var data = new social_noti_Schema.social_mention_notification({ 
 							
-								receiver_container: temp, 	                    													// User Id
-								notification_body: notification_body,
-								type:parseInt(type),
-								post_id:post_id
+								receiver_container	: temp, 	                    													// User Id
+								notification_body	: notification_body,
+								type				: parseInt(type),
+								post_id				: post_id,
+								category			: category
 								
 							});
 
@@ -280,6 +300,7 @@ module.exports.socialMentionNotification = function (req, res){
 module.exports.getsocialnotifydata = function (req, res){
 	
 	var userid 		= req.params.userid;
+	var category 	= req.query.category;
 	var from		= req.query.from;
 	var publicKey 	= req.query.publicKey;
 	var signature 	= req.query.signature;
@@ -330,8 +351,17 @@ module.exports.getsocialnotifydata = function (req, res){
 				
 				else
 				{
+					if(category=="All" || category==null || category==undefined || category=="")
+					{
+						query = {$and:[{'receiver_container.receiver_id':userid},{created_at:{$lte:from}}]}
+					}
+					else
+					{
+						query = {$and:[{'receiver_container.receiver_id':userid},{category:category},{created_at:{$lte:from}}]}
+					}
+				
 					social_noti_Schema.social_mention_notification
-					//.find({$and:[{receiver_container:{$elemMatch:{receiver_id:userid}}},{created_at:{$lte:from}}]})					.find({$and:[{'receiver_container.receiver_id':userid},{created_at:{$lte:from}}]})
+					//.find({$and:[{receiver_container:{$elemMatch:{receiver_id:userid}}},{created_at:{$lte:from}}]})					.find(query)
 					.sort({'created_at':-1})
 					.limit(1)
 					.lean()
@@ -343,16 +373,30 @@ module.exports.getsocialnotifydata = function (req, res){
 							sendResponse(req, res, 500, 5, "Databse Error");
 							return;
 						}
+						
+						if(result=="" || result==undefined || result==null)
+						{
+							console.log('No Result');
+							sendResponse(req, res, 200, -1, "No data Found");
+							return
+						}
 
 						var tempArray = [];		
 
-						// var index 
-						
-						async.each(result, function(singleResult, callback){		
+						async.each(result, function(singleResult, callback){	
+
+							if(category=="All" || category==null || category==undefined || category=="")
+							{
+								query = {$and: [{"receiver_container.receiver_id": userid},{_id: singleResult._id}]}
+							}
+							else
+							{
+								query = {$and: [{"receiver_container.receiver_id": userid},{category:category},{_id: singleResult._id}]}
+							}
 							
 							console.log(singleResult)
 							social_noti_Schema.social_mention_notification
-							.findOneAndUpdate({$and: [{"receiver_container.receiver_id": userid}, {_id: singleResult._id}]},
+							.findOneAndUpdate(query,
 											{
 												"$set": {
 													"receiver_container.$.read": true
@@ -483,6 +527,7 @@ module.exports.deleteSocialNotify = function (req, res){
 module.exports.countSocialMentionNotification = function (req, res){
 	
 	var userid 		= req.params.userid;
+	var category 	= req.query.category;
 	var publicKey	= req.query.publicKey;
 	var signature	= req.query.signature;
 	
@@ -519,8 +564,17 @@ module.exports.countSocialMentionNotification = function (req, res){
 				
 				else
 				{
+					if(category==null || category=='All' || category==undefined || category=="")
+					{
+						query = {$and: [{"receiver_container.receiver_id": userid}, {"receiver_container.read": false}]}
+					}
+					else
+					{
+						query = {$and: [{"receiver_container.receiver_id": userid},{category:category},{"receiver_container.read": false}]}
+					}
+					
 					social_noti_Schema.social_mention_notification
-					.count({$and: [{"receiver_container.receiver_id": userid}, {"receiver_container.read": false}]})
+					.count(query)
 					.exec(function(err, result){
 					
 						if(err)

@@ -6,6 +6,7 @@ var social_notification = mongoose.Schema({
     notification_body: 				  {type: String},           // Notification Body
     //post_id: 				  		  {type: String},           // Post id
     type: 				  		  	  {type: Number},           // Type
+    category: 				  		  {type: String},           // Category
     post_description: 				  {type: String},           // Post Description
     posted_by: 						  {type: String},           // Post Description
     read: 							  {type: Boolean, default:false},
@@ -26,7 +27,8 @@ var social_mention_notification = mongoose.Schema({
 
 	receiver_container: 			  [receiverSchema],           	// Receiver Id
     notification_body: 				  {type: String},           	// Notification Body
-    type: 				  		  	  {type: Number},           	// Type
+	type:							  {type: Number},				// Type
+    category: 				  		  {type: String},           	// Category
     post_id: 				  		  {type: String},           	// Post Id
     created_at: 					  {type: Date, default:Date.now()} 
 

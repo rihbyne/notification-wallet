@@ -8,11 +8,11 @@ var http 				= require('http');
 var Mailgun             = require('mailgun-js');							// For Emails (Mailgun Module)
 var request             = require('request');                               // Request Module
 var crypt               = require("../config/crypt");			    		// Crypt Connectivity.
+var util				= require('../helpers/util.js');					// Master Functionality
 
 var from_who            = 'donotreply@searchtrade.com';						// Sender of Email
 var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key For Mailgun
 var domain              = 'searchtrade.com';								// Domain Name
-
 
 var ip                  = 'http://localhost:4020';
 var ipn                 = 'http://192.168.2.15:5020';
@@ -73,7 +73,7 @@ module.exports.sendmail = function (mailinfo, res) {
 };
 
 // Mis Payment Email
-module.exports.sendEmail = function (req, res){
+module.exports.sendMissingPaymentEmail = function (req, res){
 
 	var to                  = req.body.to;
 	var subject             = req.body.subject;
@@ -181,7 +181,7 @@ module.exports.sendNotification = function (req, res){
 	var user_id             = req.body.user_id;
 	var smsText				= req.body.smsText;
 	var mobileNumber		= req.body.mobileNumber;
-	var type				= req.body.type
+	var category			= req.body.category;
 
 	var notification_body   = req.body.notification_body;
 	var notification_code	= req.body.notification_code;
@@ -255,102 +255,61 @@ module.exports.sendNotification = function (req, res){
 				}
 				else
 				{
-					if(2&parseInt(notification_code))
-					{
-						console.log("Send Email");
+					var data ={
+						
+						notification_code	: notification_code,
+						to					: to,
+						subject				: subject,
+						email_body			: email_body,
+						smsText				: smsText,
+						mobileNumber		: mobileNumber
+					}
+					
+					util.masterNotification(data, function(result){
+						
+						var notification_message = new notificationschema.notification_msg({
+							user_id: user_id, 	                    // User Id
+							category: category, 	                // Category
+							notification_body: notification	        // Text
+						});
 
-						var mailOptions = {
-							from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
-							to: to, 								            // List of Receivers
-							subject: subject, 		                            // Subject line
-							text: email_body,
-							html: email_body
-						};
+						var util 				= require('util');
+						console.log('Result :'+util.inspect(result));
+						
+						notification_message.save(function(err){
 
-						mailgun.messages().send(mailOptions, function(err, cb){
-
-							//Error In Sending Email
-							if (err) {
-
-								console.log('Mail Not Sent');
-								console.log(err);
-								sendResponse(req, res, 200, 29, "Email Sending Error");
-								return;
-
+							if(err)
+							{
+							  console.log(err);
+							  return err;
 							}
+								
+							// request.post({
 
-							console.log('Mail Sent Successfully');
+								// url: 'http://192.168.2.11:4000/setpost',
+								// body: {userid:user_id,post_description:notification,privacy_setting:2},
+								// json: true,
+								// headers: {"content-type": "application/json"}
+
+							// },function optionalCallback(err, httpResponse, body){
+
+								// if (err)
+								// {
+									// sendResponse(req, res, 404, 7, err);
+									// console.error('Curl request Failed for register api: \n', err);
+									// return;
+								// }
+								
+								console.log('Post Successfully Set');
+								console.log('Saved SuccessFully');
+								sendResponse(req, res, 200, -1, result);						
+								//io.emit("DatabaseEvent",{ signal : 'true' });
+								
+							// })						
 
 						});
-					}
-
-					if(4&parseInt(notification_code))
-					{
-						console.log("Send SMS");
-
-						var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
-										
-						request(smsURL, function (error, response, body) {
-
-							if(error) 
-							{
-								console.log('SMS Not Sent');
-								console.log(error);
-								sendResponse(req, res, 200, 29, "SMS Sending Error");
-								return;
-							}
-							
-							else if(response.statusCode == 200)
-							{
-								console.log('SMS Sent Successfully');
-							}
-						
-						})
-					}
 					
-					if(1&parseInt(notification_code))
-					{
-						console.log("Push Notification");
-					}
-					
-					var notification_message = new notificationschema.notification_msg({
-						user_id: user_id, 	                    // User Id
-						type: type, 	                    	// Type
-						notification_body: notification	        // Text
-					});
-
-					notification_message.save(function(err){
-
-						if(err)
-						{
-						  console.log(err);
-						  return err;
-						}
-							
-						// request.post({
-
-							// url: 'http://192.168.2.11:4000/setpost',
-							// body: {userid:user_id,post_description:notification,privacy_setting:2},
-							// json: true,
-							// headers: {"content-type": "application/json"}
-
-						// },function optionalCallback(err, httpResponse, body){
-
-							// if (err)
-							// {
-								// sendResponse(req, res, 404, 7, err);
-								// console.error('Curl request Failed for register api: \n', err);
-								// return;
-							// }
-							
-							console.log('Post Successfully Set');
-							console.log('Saved SuccessFully');
-							sendResponse(req, res, 200, -1, "Success");						
-							io.emit("DatabaseEvent",{ signal : 'true' });
-							
-						// })						
-
-					});
+					})
 					
 				}
 				
@@ -560,7 +519,7 @@ module.exports.sendRejectBidNotification = function (req, res){
 								
 								var notification_message = new notificationschema.notification_msg({ 
 									user_id: user_id, 	                    													// User Id
-									type: "Reject Bid",
+									category: "Reject Bid",
 									notification_body: "Your bid of "+bidAmount+"BTC has been rejected on keyword #"+keyword   	// Text
 								});
 
@@ -757,9 +716,11 @@ module.exports.stdeletenotify = function (req, res){
 module.exports.stgetnotifycount = function (req, res){
 	
 	var userid 		= req.params.userid;
-	var type		= req.params.type;
+	var category	= req.query.category;
 	var publicKey	= req.query.publicKey;
 	var signature	= req.query.signature;
+	
+	console.log(category);
 	
 	var query = {publicKey:publicKey,token:true};
 
@@ -794,14 +755,14 @@ module.exports.stgetnotifycount = function (req, res){
 				
 				else
 				{
-					if(type=='All' || type=='all' || type=='ALL')
+					if(category==null || category=='All' || category==undefined || category =="")
 					{
 						query = {$and:[{user_id:userid},{read:false}]}
 					}
 					
 					else
 					{
-						query = {$and:[{user_id:userid},{type:type},{read:false}]}
+						query = {$and:[{user_id:userid},{category:category},{read:false}]}
 					}
 				
 					notificationschema.notification_msg
@@ -831,9 +792,9 @@ module.exports.stgetnotifycount = function (req, res){
 
 module.exports.stgetnotifydata = function (req, res){
 	
-	var userid 	= req.params.userid;
-	var from	= req.query.from;
-	var type 	= req.query.type;
+	var userid 		= req.params.userid;
+	var from		= req.query.from;
+	var category 	= req.query.category;
 	var query = "";
 	//var publicKey	= req.query.publicKey;
 	//var signature	= req.query.signature;
@@ -853,14 +814,14 @@ module.exports.stgetnotifydata = function (req, res){
 		
 	} else{
 	
-		if(type=='All' || type=='all' || type=='ALL')
+		if(category==null || category=='All' || category==undefined || category=="")
 		{
 			query = {$and:[{user_id:userid},{created_at:{$lt:from}}]}
 		}
 		
 		else
 		{
-			query = {$and:[{user_id:userid},{type:type},{created_at:{$lt:from}}]}
+			query = {$and:[{user_id:userid},{category:category},{created_at:{$lt:from}}]}
 		}
 	
 		notificationschema.notification_msg
@@ -875,7 +836,14 @@ module.exports.stgetnotifydata = function (req, res){
 				sendResponse(req, res, 500, 5, 'Database Error');
 				return;
 				
-			} else {
+			} 
+			if(result=="" || result==undefined || result==null)
+			{	
+				console.log('No Data Found');
+				sendResponse(req, res, 200, -1, 'No Data Fount');
+				return;
+			}
+			else {
 			
 				console.log('Result : '+result);
 				console.log(Array.isArray(result));
