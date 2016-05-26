@@ -15,12 +15,12 @@ require('dotenv').config() // loads project specific process.env settings from .
 var log = require('./config/logging')()
 require('./config/db.js') //keep the connection open to db when app boots/reboots
 
-var notificationschema  			= require('./model/notification_model.js');
-var notification        			= require('./api/notification.js');
-var mailer              			= require('./api/mail.js');                     		// Mail Functionality
-var social_notification 			= require('./api/social_notification.js');      		// Socail Functionality
-var social_mention_notification     = require('./api/social_mention_notification.js');      // Socail Mention Functionality
-var io 								= require('./api/socket.js');
+var notificationschema  = require('./model/notification_model.js');
+var notification        = require('./api/notification.js');
+var social_notification        	= require('./api/social_notification.js');
+var social_mention_notification = require('./api/social_mention_notification.js');
+var mailer              = require('./api/mail.js');                     // Mail Functionality
+var io 					= require('./api/socket.js');
 //var socket_func 		= require('./socket.js')
 
 /* create http server and pass the express appln to it */

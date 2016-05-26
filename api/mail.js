@@ -10,19 +10,20 @@ var request             = require('request');                               // R
 var crypt               = require("../config/crypt");			    		// Crypt Connectivity.
 var util				= require('../helpers/util.js');					// Master Functionality
 
-var from_who            = 'donotreply@searchtrade.com';						// Sender of Email
-var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key For Mailgun
-var domain              = 'searchtrade.com';								// Domain Name
+var from_who            = process.env.DO_NOT_REPLY;						// Sender of Email
+var api_key             = process.env.MAILGUN_API_KEY;			// Api Key For Mailgun
+var domain              = process.env.DOMAIN;								// Domain Name
 
-var ip                  = 'http://localhost:4020';
-var ipn                 = 'http://192.168.2.15:5020';
+
+var ip                  = process.env.PROTOCOL+'://'+ process.env.STWALLET_IP + ':'+
+                          process.env.STWALLET_PORT;
 
 var mailgun             = new Mailgun({apiKey: api_key, domain: domain});	// Mailgun Object
 var io 					= require('./socket.js');
 
-var smsLoginId 			= '9320027660'; //'7827572892';
-var smsPass				= 'tagepuguz';	//'amit123456';
-var optins				= 'OPTINS';
+var smsLoginId 			= process.env.PRIMARY_SMS_GATEWAY_ID;;
+var smsPass				= process.env.PRIMARY_SMS_PWD;
+var optins				= process.env.SMS_OPTINS;
 var async				= require('async');
 
 //var GCM 				= require('gcm').GCM;
@@ -410,7 +411,7 @@ module.exports.sendRejectBidNotification = function (req, res){
 					
 					request.get({
                                 
-						url: ipn+'/api/subrejectbid/users',
+						url: ip+'/api/subrejectbid/users',
 						qs: {user_email_container:JSON.stringify(email)},
 						headers: {"content-type": "application/json"}
 						
@@ -534,10 +535,10 @@ module.exports.sendRejectBidNotification = function (req, res){
 									
 									if(result)
 									{
-									
+									  base_url = 'http://'+process.env.STWALLET_IP+':'+process.env.STWALLET_PORT +'/setpost'
 										request.post({
 
-											url: 'http://192.168.2.23:4000/setpost',
+											url: base_url,
 											body: {userid:user_id,post_description:notification_message.notification_body,privacy_setting:2},
 											json: true,
 											headers: {"content-type": "application/json"}
