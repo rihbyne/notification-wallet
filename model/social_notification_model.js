@@ -2,13 +2,14 @@ var mongoose        = require('mongoose');           // For Mongoose
 
 var social_notification = mongoose.Schema({
 
-	user_id: 					      {type: String},           // User id
-    notification_body: 				  {type: String},           // Notification Body
-    //post_id: 				  		  {type: String},           // Post id
-    type: 				  		  	  {type: Number},           // Type
-    category: 				  		  {type: String},           // Category
-    post_description: 				  {type: String},           // Post Description
-    posted_by: 						  {type: String},           // Post Description
+	user_id: 					      {type: String},           		// User id
+    notification_body: 				  {type: String},           		// Notification Body
+    //post_id: 				  		  {type: String},           		// Post id
+    type: 				  		  	  {type: Number},           		// Type
+    category: 				  		  {type: String},           		// Category
+    post_description: 				  {type: String},           		// Post Description
+    posted_by: 						  {type: String},           		// Post Description
+    slot: 						  	  {type: String, default:"SN"},     // Slot
     read: 							  {type: Boolean, default:false},
     created_at: 					  {type: Date, default:Date.now()} 
 
@@ -30,6 +31,7 @@ var social_mention_notification = mongoose.Schema({
 	type:							  {type: Number},				// Type
     category: 				  		  {type: String},           	// Category
     post_id: 				  		  {type: String},           	// Post Id
+    slot: 				  		  	  {type: String, default:"MN"}, // Slot
     created_at: 					  {type: Date, default:Date.now()} 
 
 }, { versionKey: false });

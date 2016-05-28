@@ -15,12 +15,13 @@ require('dotenv').config() // loads project specific process.env settings from .
 var log = require('./config/logging')()
 require('./config/db.js') //keep the connection open to db when app boots/reboots
 
-var notificationschema  = require('./model/notification_model.js');
-var notification        = require('./api/notification.js');
-var social_notification        	= require('./api/social_notification.js');
-var social_mention_notification = require('./api/social_mention_notification.js');
-var mailer              = require('./api/mail.js');                     // Mail Functionality
-var io 					= require('./api/socket.js');
+var notificationschema  			= require('./model/notification_model.js');
+var notification        			= require('./api/notification.js');
+var social_notification        		= require('./api/social_notification.js');
+var social_mention_notification 	= require('./api/social_mention_notification.js');
+var general 						= require('./api/general.js');
+var mailer              			= require('./api/mail.js');                     // Mail Functionality
+var io 								= require('./api/socket.js');
 //var socket_func 		= require('./socket.js')
 
 /* create http server and pass the express appln to it */
@@ -67,6 +68,9 @@ app.get('/socialmention/user/:userid', social_mention_notification.getsocialnoti
 app.get('/socialmention/user/:userid/count', social_mention_notification.countSocialMentionNotification);
 // app.put('/socialmention/user/:userid', social_notification.updateSocialMentionNotify);
 
+// All
+// app.delete('/allnotify/user/:userid', general.deleteAllNotifications);
+// app.get('/allnotify/user/:userid', general.getAllNotifications);
 
 // ******************************************************************** //
 

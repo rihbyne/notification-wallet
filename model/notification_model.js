@@ -16,6 +16,7 @@ var notification_msg = mongoose.Schema({
     type: 				  			  {type: Number},           		// Type
     category: 				  		  {type: String},           		// Category
     read: 							  {type: Boolean, default:false},	
+    slot: 							  {type: String, default:"ST"},		// Slot
     created_at: 					  {type: Date, default:Date.now()}	 
 
 }, { versionKey: false });

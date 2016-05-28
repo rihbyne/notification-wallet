@@ -610,9 +610,10 @@ module.exports.socialgetnotifydata = function (req, res){
 						
 					} else {
 					
-						sendResponse(req, res, 200, -1, retVal);
+						sendResponse(req, res, 200, -1, result);
 						return;
 					}
+					
 				})
 			
 			}
