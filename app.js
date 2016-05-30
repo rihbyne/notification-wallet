@@ -70,7 +70,8 @@ app.get('/socialmention/user/:userid/count', social_mention_notification.countSo
 
 // All
 // app.delete('/allnotify/user/:userid', general.deleteAllNotifications);
-app.get('/allnotify/user/:userid', general.getAllNotifications);
+// app.get('/allnotify/user/:userid', general.getAllNotifications);
+app.get('/allnotification/user/:userid', general.getAllNotifyData);
 
 // ******************************************************************** //
 
