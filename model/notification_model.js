@@ -13,8 +13,10 @@ var notification_msg = mongoose.Schema({
 
 	user_id: 					      {type: String},           		// User Id
     notification_body: 				  {type: String},           		// Notification Body
-    type: 				  			  {type: String},           		// Type
+    type: 				  			  {type: Number},           		// Type
+    category: 				  		  {type: String},           		// Category
     read: 							  {type: Boolean, default:false},	
+    slot: 							  {type: String, default:"ST"},		// Slot
     created_at: 					  {type: Date, default:Date.now()}	 
 
 }, { versionKey: false });

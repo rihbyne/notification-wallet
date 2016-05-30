@@ -8,6 +8,7 @@ var http 				= require('http');
 var Mailgun             = require('mailgun-js');							// For Emails (Mailgun Module)
 var request             = require('request');                               // Request Module
 var crypt               = require("../config/crypt");			    		// Crypt Connectivity.
+var util				= require('../helpers/util.js');					// Master Functionality
 
 var from_who            = process.env.DO_NOT_REPLY;						// Sender of Email
 var api_key             = process.env.MAILGUN_API_KEY;			// Api Key For Mailgun
@@ -89,6 +90,7 @@ module.exports.socialNotification = function (req, res){
 	var posted_by			= req.body.posted_by;
 	var post_description	= req.body.post_description;
 	var type 				= req.body.type;
+	var category			= req.body.category;
 	
 	var publicKey			= req.body.publicKey;
 	var signature			= req.body.signature;
@@ -159,83 +161,40 @@ module.exports.socialNotification = function (req, res){
 				}
 				else
 				{
-					if(2&parseInt(notification_code))
-					{
-						console.log("Send Email");
+					var data ={
+						
+						notification_code	: notification_code,
+						to					: to,
+						subject				: subject,
+						email_body			: email_body,
+						smsText				: smsText,
+						mobileNumber		: mobileNumber
+					}
+					
+					util.masterNotification(data, function(result){
+						
+						var notification_message = new social_noti_Schema.social_notification({
+							user_id: user_id, 	                    	// User Id
+							notification_body: notification,	        // Notification body
+							type: type,	        						// Type
+							category: category,	        				// Category
+							posted_by: posted_by,	        			// Posted By
+						});
 
-						var mailOptions = {
-							from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
-							to: to, 								            // List of Receivers
-							subject: subject, 		                            // Subject line
-							text: email_body,
-							html: email_body
-						};
+						notification_message.save(function(err){
 
-						mailgun.messages().send(mailOptions, function(err, cb){
-
-							//Error In Sending Email
-							if (err) {
-
-								console.log('Mail Not Sent');
-								console.log(err);
-								sendResponse(req, res, 200, 29, "Email Sending Error");
-								return;
-
+							if(err)
+							{
+							  console.log(err);
+							  return err;
 							}
-
-							console.log('Mail Sent Successfully');
+								
+							console.log('Saved SuccessFully');
+							sendResponse(req, res, 200, -1, result);
 
 						});
-					}
-
-					if(4&parseInt(notification_code))
-					{
-						console.log("Send SMS");
-
-						var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
-										
-						request(smsURL, function (error, response, body) {
-
-							if(error) 
-							{
-								console.log('SMS Not Sent');
-								console.log(error);
-								sendResponse(req, res, 200, 29, "SMS Sending Error");
-								return;
-							}
-							
-							else if(response.statusCode == 200)
-							{
-								console.log('SMS Sent Successfully');
-							}
-						
-						})
-					}
 					
-					if(1&parseInt(notification_code))
-					{
-						console.log("Push Notification");
-					}
-					
-					var notification_message = new social_noti_Schema.social_notification({
-						user_id: user_id, 	                    	// User Id
-						notification_body: notification,	        // Notification body
-						type: type,	        						// Type
-						posted_by: posted_by,	        			// Posted By
-					});
-
-					notification_message.save(function(err){
-
-						if(err)
-						{
-						  console.log(err);
-						  return err;
-						}
-							
-						console.log('Saved SuccessFully');
-						sendResponse(req, res, 200, -1, "Success");							
-
-					});
+					})
 					
 				}
 				
@@ -264,6 +223,7 @@ module.exports.followNotification = function (req, res){
 
 	var notification_body   = req.body.notification_body;
 	var notification_code	= req.body.notification_code;
+	var category			= req.body.category;
 	
 	var publicKey			= req.body.publicKey;
 	var signature			= req.body.signature;
@@ -334,81 +294,39 @@ module.exports.followNotification = function (req, res){
 				}
 				else
 				{
-					if(2&parseInt(notification_code))
-					{
-						console.log("Send Email");
+					
+					var data ={
+						
+						notification_code	: notification_code,
+						to					: to,
+						subject				: subject,
+						email_body			: email_body,
+						smsText				: smsText,
+						mobileNumber		: mobileNumber
+					}
+				
+					util.masterNotification(data, function(result){
+					
+						var notification_message = new social_noti_Schema.social_notification({
+							user_id: user_id, 	                    // User Id
+							notification_body: notification,	    // Text
+							category: category	        			// Category
+						});
 
-						var mailOptions = {
-							from: 'Search Trade <donotreply@searchtrade.com>', 	// Sender address
-							to: to, 								            // List of Receivers
-							subject: subject, 		                            // Subject line
-							text: email_body,
-							html: email_body
-						};
+						notification_message.save(function(err){
 
-						mailgun.messages().send(mailOptions, function(err, cb){
-
-							//Error In Sending Email
-							if (err) {
-
-								console.log('Mail Not Sent');
-								console.log(err);
-								sendResponse(req, res, 200, 29, "Email Sending Error");
-								return;
-
+							if(err)
+							{
+							  console.log(err);
+							  return err;
 							}
-
-							console.log('Mail Sent Successfully');
+								
+							console.log('Saved SuccessFully');
+							sendResponse(req, res, 200, -1, result);							
 
 						});
-					}
-
-					if(4&parseInt(notification_code))
-					{
-						console.log("Send SMS");
-
-						var smsURL = 'http://onlinesms.in/api/sendValidSMSdataUrl.php?login='+smsLoginId+'&pword='+smsPass+'&msg='+smsText+'&senderid='+optins+'&mobnum='+mobileNumber;
-										
-						request(smsURL, function (error, response, body) {
-
-							if(error) 
-							{
-								console.log('SMS Not Sent');
-								console.log(error);
-								sendResponse(req, res, 200, 29, "SMS Sending Error");
-								return;
-							}
-							
-							else if(response.statusCode == 200)
-							{
-								console.log('SMS Sent Successfully');
-							}
-						
-						})
-					}
 					
-					if(1&parseInt(notification_code))
-					{
-						console.log("Push Notification");
-					}
-					
-					var notification_message = new social_noti_Schema.social_notification({
-						user_id: user_id, 	                    // User Id
-						notification_body: notification	        // Text
-					});
-
-					notification_message.save(function(err){
-
-						if(err)
-						{
-						  console.log(err);
-						  return err;
-						}
-							
-						console.log('Saved SuccessFully');
-						sendResponse(req, res, 200, -1, "Success");							
-
-					});
+					})
 					
 				}
 				
@@ -542,6 +460,7 @@ module.exports.socialdeletenotify = function (req, res){
 module.exports.socialgetnotifycount = function (req, res){
 	
 	var userid 		= req.params.userid;
+	var category 	= req.query.category;
 	var publicKey	= req.query.publicKey;
 	var signature	= req.query.signature;
 	
@@ -578,8 +497,18 @@ module.exports.socialgetnotifycount = function (req, res){
 				
 				else
 				{
+					if(category=='All' || category==null || category==undefined || category=="")
+					{	
+						query = {$and:[{user_id:userid},{read:false}]}
+					}
+					
+					else
+					{
+						query = {$and:[{user_id:userid},{category:category},{read:false}]}
+					}
+					
 					social_noti_Schema.social_notification
-					.count({$and:[{user_id:userid},{read:false}]})
+					.count(query)
 					.exec(function(err, result){
 					
 						if(err)
@@ -606,8 +535,9 @@ module.exports.socialgetnotifycount = function (req, res){
 
 module.exports.socialgetnotifydata = function (req, res){
 	
-	var userid 	= req.params.userid;
-	var from	= req.query.from;
+	var userid 		= req.params.userid;
+	var from		= req.query.from;
+	var category	= req.query.category;
 	//var publicKey	= req.query.publicKey;
 	//var signature	= req.query.signature;
 	
@@ -616,6 +546,8 @@ module.exports.socialgetnotifydata = function (req, res){
 		var date = new Date()
 		from = date.toISOString();
 	}
+	
+	var query;
 	
 	var isoDateRegex = new RegExp('/(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})\.\d{3}Z/');
 	// var isoDateRegex = new RegExp('/(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})\+.+(\d{3})\+Z/');
@@ -656,8 +588,18 @@ module.exports.socialgetnotifydata = function (req, res){
 					index = 49;
 				}
 				
+				if(category=='All' || category==null || category==undefined || category=="")
+				{	
+					query = {$and:[{user_id:userid},{created_at:{$gte:result[index-1].created_at}},{created_at:{$lte:result[0].created_at}}]}
+				}
+				
+				else
+				{
+					query = {$and:[{user_id:userid},{category:category},{created_at:{$gte:result[index-1].created_at}},{created_at:{$lte:result[0].created_at}}]}
+				}
+				
 				social_noti_Schema.social_notification
-				.update({$and:[{user_id:userid},{created_at:{$gte:result[index-1].created_at}},{created_at:{$lte:result[0].created_at}}]},{$set:{read:true}},{multi:true})
+				.update(query, {$set:{read:true}},{multi:true})
 				.exec(function(err, retVal){
 				
 					if(err)
@@ -668,9 +610,10 @@ module.exports.socialgetnotifydata = function (req, res){
 						
 					} else {
 					
-						sendResponse(req, res, 200, -1, retVal);
+						sendResponse(req, res, 200, -1, result);
 						return;
 					}
+					
 				})
 			
 			}

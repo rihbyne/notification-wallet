@@ -18,6 +18,7 @@
     "body-parser": "^1.15.0",
     "bunyan": "^1.8.1",
     "bunyan-format": "^0.2.1",
+    "cookie-parser": "^1.4.2",
     "crypt": "0.0.1",
     "dotenv": "^2.0.0",
     "express": "^4.13.4",

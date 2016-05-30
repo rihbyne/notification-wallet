@@ -15,12 +15,13 @@ require('dotenv').config() // loads project specific process.env settings from .
 var log = require('./config/logging')()
 require('./config/db.js') //keep the connection open to db when app boots/reboots
 
-var notificationschema  = require('./model/notification_model.js');
-var notification        = require('./api/notification.js');
-var social_notification        	= require('./api/social_notification.js');
-var social_mention_notification = require('./api/social_mention_notification.js');
-var mailer              = require('./api/mail.js');                     // Mail Functionality
-var io 					= require('./api/socket.js');
+var notificationschema  			= require('./model/notification_model.js');
+var notification        			= require('./api/notification.js');
+var social_notification        		= require('./api/social_notification.js');
+var social_mention_notification 	= require('./api/social_mention_notification.js');
+var merger = require('./api/merger.js');
+var mailer              			= require('./api/mail.js');                     // Mail Functionality
+var io 								= require('./api/socket.js');
 //var socket_func 		= require('./socket.js')
 
 /* create http server and pass the express appln to it */
@@ -67,14 +68,17 @@ app.get('/socialmention/user/:userid', social_mention_notification.getsocialnoti
 app.get('/socialmention/user/:userid/count', social_mention_notification.countSocialMentionNotification);
 // app.put('/socialmention/user/:userid', social_notification.updateSocialMentionNotify);
 
+// All
+app.delete('/allnotify/user/:userid', merger.deleteAllNotifications);
+// app.get('/allnotify/user/:userid', general.getAllNotifications);
 
 // ******************************************************************** //
 
 
 // app.post('/secure/sendPHPmail', mailer.sendPHPmail);
 // app.post('/secure/getNotificationStatus', mailer.getNotificationStatus);
-//app.post('/secure/getMyNotification', notification.getMyNotification);
-app.post('/secure/sendEmail', mailer.sendEmail);
+app.post('/secure/getMyNotification', notification.getMyNotification);
+app.post('/secure/missingpayment', mailer.sendMissingPaymentEmail);
 //app.post('/secure/socketEventTrigger', socket_func);
 
 /* error handling for 404 routes */
