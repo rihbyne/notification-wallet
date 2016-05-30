@@ -19,7 +19,7 @@ var notificationschema  			= require('./model/notification_model.js');
 var notification        			= require('./api/notification.js');
 var social_notification        		= require('./api/social_notification.js');
 var social_mention_notification 	= require('./api/social_mention_notification.js');
-var general 						= require('./api/general.js');
+var merger = require('./api/merger.js');
 var mailer              			= require('./api/mail.js');                     // Mail Functionality
 var io 								= require('./api/socket.js');
 //var socket_func 		= require('./socket.js')
@@ -69,7 +69,7 @@ app.get('/socialmention/user/:userid/count', social_mention_notification.countSo
 // app.put('/socialmention/user/:userid', social_notification.updateSocialMentionNotify);
 
 // All
-// app.delete('/allnotify/user/:userid', general.deleteAllNotifications);
+app.delete('/allnotify/user/:userid', merger.deleteAllNotifications);
 // app.get('/allnotify/user/:userid', general.getAllNotifications);
 
 // ******************************************************************** //
