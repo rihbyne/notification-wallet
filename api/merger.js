@@ -199,6 +199,115 @@ module.exports.deleteAllNotifications = function (req, res) {
   }
 }
 
+module.exports.updateNotify = function(req, res) {
+  var userid = req.params.userid
+  var docid =  req.params.docid
+  var publicKey = req.query.publicKey
+  var signature = req.query.signature
+  var slot = req.query.slot
+
+  var notifyLookup = {
+    ST: function(userid, docid, res) {
+      var query = {$and: [{user_id: userid},{_id: docid}]}
+      notificationschema.notification_msg
+                        .findOneAndUpdate(query, {
+                          $set: {read: true}
+                        }, {new: true})
+                        .select('_id user_id category slot created_at read')
+                        .exec(function(err, result){
+                          if (err) {
+                            util.sendJsonResponse(res, 500, 5, {failed: "datebase error"})
+                          } else if (!result) {
+                            util.sendJsonResponse(res, 404, 5, {failed: "object does not exist"})
+                          } else {
+                            util.sendJsonResponse(res, 200, -1, result)
+                          }
+                        })
+    },
+    SN: function(userid, docid, res) {
+      var query = {$and: [{user_id: userid},{_id: docid}]}
+      social_noti_Schema.social_notification
+                        .findOneAndUpdate(query, {
+                          $set: {read: true}
+                        }, {new: true})
+                        .select('_id user_id category posted_by slot created_at read')
+                        .exec(function(err, result){
+                          if (err) {
+                            util.sendJsonResponse(res, 500, 5, {failed: "datebase error"})
+                          } else if (!result) {
+                            util.sendJsonResponse(res, 404, 5, {failed: "object does not exist"})
+                          } else {
+                            util.sendJsonResponse(res, 200, -1, result)
+                          }
+                        })
+    },
+    MN: function(userid, docid, res) {
+      var query = {$and: [{"receiver_container.receiver_id": userid},{_id: docid}]}
+      social_noti_Schema.social_mention_notification
+							          .findOneAndUpdate(query,{
+												  "$set": {
+													  "receiver_container.$.read": true
+												  }
+											  }, {new: true})
+                        .select('_id type post_id category created_at slot receiver_container')
+                        .lean()
+                        .exec(function(err, revObj) {
+													if (err) {
+														log.warn(err)
+														util.sendJsonResponse(res, 500, 5, {failed: "database error"});
+														return;
+													} else if (!revObj) {
+                            util.sendJsonResponse(res, 404, 21, {failed: "object does not exist"})
+                            return
+													} else {
+														var metaContainer = _.filter(revObj.receiver_container, {'receiver_id': userid})
+														revObj.receiver_id = metaContainer[0].receiver_id
+                            revObj.read = metaContainer[0].read
+                            delete revObj.receiver_container
+                            log.info(meta.inspect(revObj))
+                            util.sendJsonResponse(res, 200, -1, revObj)
+													}
+							          })
+    }
+  }
+
+  var query = {
+    publicKey: publicKey,
+    token: true
+  }
+
+  if (/^(MN|ST|SN)$/.test(slot)) {
+    request.post({
+      url: ip+'/api/getPvtKey',
+      body: query,
+      json: true,
+      headers: {"content-type": "application/json"}
+    }, function(err, response, body) {
+      if (err) {
+        log.error(err)
+        sendResponse(req, res, 403, 7, err)
+      }
+
+      if (body.errCode === -1) {
+        var privateKey = body.errMsg
+        var text = 'userid='+userid+'&docid='+docid+'&slot='+slot+'&publicKey='+publicKey;
+
+        crypt.validateSignature(text, signature, privateKey, function(isValid) {
+          if (!isValid) {
+            log.warn("invalid signature")
+            sendResponse(req, res, 403, 14, "Invalid Signature")
+          }  else {
+            notifyLookup[slot](userid, docid, res)
+          }
+        })
+      }
+    })
+  } else {
+    log.warn("appropriate slot paramter not found")
+    sendResponse(req, res, 404, 41, {failed: "appropriate slot paramter not found"})
+  }
+}
+
 module.exports.getAllNotifyData = function(req, res){
 
 	var userid 	= req.params.userid;
@@ -320,127 +429,11 @@ module.exports.getAllNotifyData = function(req, res){
 		function custom_sort(a, b){
 		
 			return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-			
 		}
 
 		totalResult=totalResult.sort(custom_sort);
 		totalResult = totalResult.slice(0, 50);
-		
 		console.log(totalResult.length);
-		
-		var resArray = [];
-		
-		async.each(totalResult, function(singleResult, callback){
-		
-			var slot = singleResult.slot;
-			
-			if(slot == "ST")
-			{
-				if(singleResult.read=="false" || singleResult.read==false)
-				{
-					var id = singleResult._id;
-				
-					notificationschema.notification_msg
-					.update({$and:[{user_id:userid},{_id:id}]},{$set:{read:true}})
-					.exec(function(err, retVal){
-				
-						if(err)
-						{
-							console.log(err)
-							sendResponse(req, res, 500, 5, 'Database Error');
-							return;
-							
-						}
-						
-						resArray.push(retVal);
-						
-						callback()
-						
-					})
-					
-				}
-				
-				else
-				{
-					resArray.push(singleResult);
-					callback();
-				}				
-			}
-			
-			if(slot == "SN")
-			{
-				if(singleResult.read=="false" || singleResult.read==false)
-				{
-					var id = singleResult._id;
-				
-					social_noti_Schema.social_notification
-					.update({$and:[{user_id:userid},{_id:id}]},{$set:{read:true}})
-					.exec(function(err, retVal){
-				
-						if(err)
-						{
-							console.log(err)
-							sendResponse(req, res, 500, 5, 'Database Error');
-							return;
-							
-						}
-						
-						resArray.push(retVal);
-						
-						callback()
-						
-					})
-					
-				}
-				
-				else
-				{
-					resArray.push(singleResult);
-					callback();
-				}						
-			}
-			
-			if(slot == "MN")
-			{
-				social_noti_Schema.social_mention_notification
-				.findOneAndUpdate({$and: [{"receiver_container.receiver_id": userid},{_id: singleResult._id}]},
-									{ "$set": { "receiver_container.$.read": true }}, {new: true}, function(err, revObj) {		
-									
-						if (err) {
-							console.log(err)
-							sendResponse(req, res, 500, 5, "Databse Error");
-							return;
-						} else if (!revObj) {
-							// tempArray.push(singleResult);
-							
-						} else {
-							var metaContainer = _.filter(revObj.receiver_container, {'receiver_id': userid})
-							revObj.receiver_container = metaContainer
-							resArray.push(revObj);
-						}
-					callback()						
-				})
-			}
-		
-		}, function(err){
-						
-			if(err)
-			{
-				console.log(error);
-				sendResponse(req, res, 500, 5, "Databse Error");
-				return;
-			}
-			
-			function custom_sort(a, b){
-		
-				return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-				
-			}
-
-			resArray=resArray.sort(custom_sort);
-			sendResponse(req, res, 200, -1, resArray);																
-		})	
-	
-	})
-	
+    sendResponse(req, res, 200, -1, totalResult)
+  })
 }
