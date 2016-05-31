@@ -52,7 +52,8 @@ app.post('/stnotify/sendnotification', mailer.sendNotification);
 app.post('/stnotify/sendRejectBidNotification', mailer.sendRejectBidNotification);
 app.delete('/stnotify/user/:userid', mailer.stdeletenotify);
 app.get('/stnotify/user/:userid', mailer.stgetnotifydata);
-app.get('/stnotify/user/:userid/count', mailer.stgetnotifycount)
+app.get('/stnotify/user/:userid/count', mailer.stgetnotifycount);
+app.put('/stnotify/user/:userid/:docid', mailer.updateSTnotify);
 
 // Social Simple Notification
 app.post('/socialnotify/socialNotification', social_notification.socialNotification);
@@ -60,17 +61,19 @@ app.post('/socialnotify/followNotification', social_notification.followNotificat
 app.delete('/socialnotify/user/:userid', social_notification.socialdeletenotify);
 app.get('/socialnotify/user/:userid', social_notification.socialgetnotifydata);
 app.get('/socialnotify/user/:userid/count', social_notification.socialgetnotifycount);
+app.put('/socialnotify/user/:userid/:docid', social_notification.updateSNnotify);
 
 // Social Mention Notification
 app.post('/socialmention/user', social_mention_notification.socialMentionNotification);
 app.delete('/socialmention/user/:userid', social_mention_notification.deleteSocialNotify);
 app.get('/socialmention/user/:userid', social_mention_notification.getsocialnotifydata);
 app.get('/socialmention/user/:userid/count', social_mention_notification.countSocialMentionNotification);
-// app.put('/socialmention/user/:userid', social_notification.updateSocialMentionNotify);
+// app.put('/socialmention/user/:userid/:docid', social_notification.updateMNnotify);
 
 // All
 app.delete('/allnotify/user/:userid', merger.deleteAllNotifications);
 app.get('/allnotification/user/:userid', merger.getAllNotifyData);
+// app.put('/allnotify/user/:userid/:docid', social_notification.updateNotify);
 
 // ******************************************************************** //
 
