@@ -14,8 +14,18 @@ var smsLoginId 			= '9320027660'; //'7827572892';
 var smsPass				= 'tagepuguz';	//'amit123456';
 var optins				= 'OPTINS';
 
-var util 				= require('util');
 var async				= require('async');
+
+module.exports.sendJsonResponse = function (res, status, errCode, errMsg) {
+  res.contentType('application/json')
+  //  res.status(status)
+  //  res.json(content)
+
+  res.status(status).send({
+    errCode: errCode,
+    errMsg: errMsg
+  })
+}
 
 module.exports.masterNotification = function(data, cb){
 
