@@ -68,12 +68,12 @@ app.post('/socialmention/user', social_mention_notification.socialMentionNotific
 app.delete('/socialmention/user/:userid', social_mention_notification.deleteSocialNotify);
 app.get('/socialmention/user/:userid', social_mention_notification.getsocialnotifydata);
 app.get('/socialmention/user/:userid/count', social_mention_notification.countSocialMentionNotification);
-// app.put('/socialmention/user/:userid/:docid', social_notification.updateMNnotify);
+app.get('/socialmention/user/:userid/doc/:docid', social_mention_notification.updateMNnotify);
 
 // All
 app.delete('/allnotify/user/:userid', merger.deleteAllNotifications);
 app.get('/allnotification/user/:userid', merger.getAllNotifyData);
-// app.put('/allnotify/user/:userid/:docid', social_notification.updateNotify);
+app.get('/allnotify/user/:userid/doc/:docid', merger.updateNotify);
 
 // ******************************************************************** //
 
@@ -95,7 +95,7 @@ app.use(function (req, res, next) {
 if (app.get('env') === 'development') {
   app.use(function (err, req, res, next) {
     res.status(err.status || 500)
-    res.render('error.ejs', {
+    res.json({
       message: err.message,
       error: err
     })
@@ -106,9 +106,9 @@ if (app.get('env') === 'development') {
 // In prod, dont return stacktrace to the browser
 app.use(function (err, req, res, next) {
   res.status(err.status || 500)
-  res.render('error.ejs', {
+  res.json({
     message: err.message,
-    error: {}
+    error: err
   })
 })
 
