@@ -392,66 +392,105 @@ module.exports.followNotification = function (req, res){
 
 module.exports.socialdeletenotify = function (req, res){
 
-	var id = req.query.id;
-	var userid = req.params.userid;
+	var id 			= req.query.id;
+	var userid 		= req.params.userid;
+	var publicKey	= req.query.publicKey;
+	var signature	= req.query.signature;
 	
-	id = JSON.parse(id);
-	
-	// id = id.replace(/\[/g,"");
-	// id = id.replace(/\]/g,"");
-	// id = id.replace(/\\/g,"");
-	// id = id.split(",");
-	
-	if(!Array.isArray(id))
-	{
-		console.log('Invalid Input (Document Id Array)')
-		sendResponse(req, res, 500, 5, 'Invalid Input Parameter');
-		return;
-	}
-	
-	var data = [];
-	
-	async.each(id, function(singleData, callback){
-					
-		id	= 	singleData;		// Storing Document id
+	var query = {publicKey:publicKey,token:true};
 
-		social_noti_Schema.social_notification
-		.findOneAndRemove({$and:[{ _id: id},{user_id:userid}]})
-		.exec(function(err, result) {
+	request.post({
+
+        url: ip+'/api/getPvtKey',
+        body: query,
+        json: true,
+        headers: {"content-type": "application/json"}
+
+    },function optionalCallback(err, httpResponse, body){
+	
+		if (err)
+        {
+            return console.error('Curl request Failed for register api: \n', err);
+        }
+        
+		if(body.errCode == -1)
+		{
+			var privateKey = body.errMsg;
+			var text = 'userid='+userid+'&id='+id+'&publicKey='+publicKey;
 			
-			if(err)
-			{
-				console.log(err)
-				sendResponse(req, res, 500, 5, 'Database Error');
-				return;
-			}
-		
-			if(result=="" || result==undefined || result==null)
-			{
-				callback();
-			}
+			crypt.validateSignature(text, signature, privateKey, function(isValid){
 			
-			else
-			{
-				data.push(result._id);
-				callback();
-			}
-		
-		})
-		
-	},function(err){
+				// Signature Not Matched
+				if (!isValid)
+				{
+					console.log('Invalid Signature');
+					sendResponse(req, res, 200, 14, "Invalid Signature");
+					return;
+				}
+	
+				id = JSON.parse(id);
+				
+				// id = id.replace(/\[/g,"");
+				// id = id.replace(/\]/g,"");
+				// id = id.replace(/\\/g,"");
+				// id = id.split(",");
+				
+				if(!Array.isArray(id))
+				{
+					console.log('Invalid Input (Document Id Array)')
+					sendResponse(req, res, 500, 5, 'Invalid Input Parameter');
+					return;
+				}
+				
+				var data = [];
+				
+				async.each(id, function(singleData, callback){
+								
+					id	= 	singleData;		// Storing Document id
+
+					social_noti_Schema.social_notification
+					.findOneAndRemove({$and:[{ _id: id},{user_id:userid}]})
+					.exec(function(err, result) {
 						
-		if(err)
-		{
-			console.log(error);
-			sendResponse(req, res, 500, 5, "Databse Error");
-			return;
+						if(err)
+						{
+							console.log(err)
+							sendResponse(req, res, 500, 5, 'Database Error');
+							return;
+						}
+					
+						if(result=="" || result==undefined || result==null)
+						{
+							callback();
+						}
+						
+						else
+						{
+							data.push(result._id);
+							callback();
+						}
+					
+					})
+					
+				},function(err){
+									
+					if(err)
+					{
+						console.log(error);
+						sendResponse(req, res, 500, 5, "Databse Error");
+						return;
+					}
+					
+					else
+					{
+						sendResponse(req, res, 200, -1, {data:data})
+					}
+				})
+				
+			})
+			
 		}
 		
-		else
-		{
-			sendResponse(req, res, 200, -1, {data:data})
-		}
 	})
 	
 }
@@ -538,8 +577,8 @@ module.exports.socialgetnotifydata = function (req, res){
 	var userid 		= req.params.userid;
 	var from		= req.query.from;
 	var category	= req.query.category;
-	//var publicKey	= req.query.publicKey;
-	//var signature	= req.query.signature;
+	var publicKey	= req.query.publicKey;
+	var signature	= req.query.signature;
 	
 	if(from == "" || from == null || from == undefined)
 	{
@@ -555,51 +594,118 @@ module.exports.socialgetnotifydata = function (req, res){
 	if(!/(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})\.\d{3}Z/.test(from))
 	{
 		sendResponse(req, res, 403, 5, 'Invalid Date Format');
+		return;
 		
-	} else{
+	} 
 	
-		social_noti_Schema.social_notification
-		.find({$and:[{user_id:userid},{created_at:{$lt:from}}]})
-		.sort({created_at:-1})
-		.limit(50)
-		.exec(function(err, result){
-		
-			if(err)
-			{
-				console.log(err)
-				sendResponse(req, res, 500, 5, 'Database Error');
-				return;
-				
-			} else {
+	var query = {publicKey:publicKey,token:true};
+
+	request.post({
+
+        url: ip+'/api/getPvtKey',
+        body: query,
+        json: true,
+        headers: {"content-type": "application/json"}
+
+    },function optionalCallback(err, httpResponse, body){
+	
+		if (err)
+        {
+            return console.error('Curl request Failed for register api: \n', err);
+        }
+        
+		if(body.errCode == -1)
+		{
+			var privateKey = body.errMsg;
+			var text = 'userid='+userid+'&publicKey='+publicKey;
 			
-				console.log('Result : '+result);
-				console.log(Array.isArray(result));
-				
-				var length = result.length;
-				var index;
-				
-				if(length<50)
+			crypt.validateSignature(text, signature, privateKey, function(isValid){
+			
+				// Signature Not Matched
+				if (!isValid)
 				{
-					index = parseInt(length);
+					console.log('Invalid Signature');
+					sendResponse(req, res, 200, 14, "Invalid Signature");
+					return;
 				}
-				
 				else
 				{
-					index = 49;
+				
+					social_noti_Schema.social_notification
+					.find({$and:[{user_id:userid},{created_at:{$lt:from}}]})
+					.sort({created_at:-1})
+					.limit(50)
+					.exec(function(err, result){
+					
+						if(err)
+						{
+							console.log(err)
+							sendResponse(req, res, 500, 5, 'Database Error');
+							return;
+							
+						} 
+						
+						if(result=="" || result==undefined || result==null)
+						{	
+							console.log('No Data Found');
+							sendResponse(req, res, 200, -1, 'No Data Fount');
+							return;
+						}
+						
+						sendResponse(req, res, 200, -1, result);
+			
+					})
 				}
 				
-				if(category=='All' || category==null || category==undefined || category=="")
-				{	
-					query = {$and:[{user_id:userid},{created_at:{$gte:result[index-1].created_at}},{created_at:{$lte:result[0].created_at}}]}
-				}
-				
-				else
+			})
+			
+		}
+		
+	})
+	
+}
+
+module.exports.updateSNnotify = function (req, res){
+
+	var userid 		= req.params.userid;
+	var docid		= req.params.docid;
+	var publicKey	= req.query.publicKey;
+	var signature	= req.query.signature;
+	
+	var query = {publicKey:publicKey,token:true};
+
+	request.post({
+
+        url: ip+'/api/getPvtKey',
+        body: query,
+        json: true,
+        headers: {"content-type": "application/json"}
+
+    },function optionalCallback(err, httpResponse, body){
+	
+		if (err)
+        {
+            return console.error('Curl request Failed for register api: \n', err);
+        }
+        
+		if(body.errCode == -1)
+		{
+			var privateKey = body.errMsg;
+			var text = 'userid='+userid+'&publicKey='+publicKey;
+			
+			crypt.validateSignature(text, signature, privateKey, function(isValid){
+			
+				// Signature Not Matched
+				if (!isValid)
 				{
-					query = {$and:[{user_id:userid},{category:category},{created_at:{$gte:result[index-1].created_at}},{created_at:{$lte:result[0].created_at}}]}
+					console.log('Invalid Signature');
+					sendResponse(req, res, 200, 14, "Invalid Signature");
+					return;
 				}
 				
 				social_noti_Schema.social_notification
-				.update(query, {$set:{read:true}},{multi:true})
+				.findOneAndUpdate({_id:docid, user_id:userid},{read:true})
+				.lean()
 				.exec(function(err, retVal){
 				
 					if(err)
@@ -607,17 +713,23 @@ module.exports.socialgetnotifydata = function (req, res){
 						console.log(err)
 						sendResponse(req, res, 500, 5, 'Database Error');
 						return;
-						
-					} else {
+					}
 					
-						sendResponse(req, res, 200, -1, result);
+					if(retVal=="" || retVal==null || retVal==undefined)
+					{
+						sendResponse(req, res, 404, -1, 'No Such Data');
 						return;
 					}
 					
+					retVal.read = true;
+					sendResponse(req, res, 200, -1, retVal);
+				
 				})
+				
+			})
 			
-			}
-			
-		})
-	}
+		}
+		
+	})
+	
 }

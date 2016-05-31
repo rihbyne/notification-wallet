@@ -5,14 +5,14 @@
 var notificationschema  = require('../model/notification_model.js');
 var http 				= require('http');
 //var notiMessageSchema   = require('../model/notification_message_model.js');
-var Mailgun             = require('mailgun-js');							// For Emails (Mailgun Module)
-var request             = require('request');                               // Request Module
-var crypt               = require("../config/crypt");			    		// Crypt Connectivity.
-var util				= require('../helpers/util.js');					// Master Functionality
+var Mailgun             = require('mailgun-js');								// For Emails (Mailgun Module)
+var request             = require('request');                               	// Request Module
+var crypt               = require("../config/crypt");			    			// Crypt Connectivity.
+var util				= require('../helpers/util.js');						// Master Functionality
 
-var from_who            = process.env.DO_NOT_REPLY;						// Sender of Email
-var api_key             = process.env.MAILGUN_API_KEY;			// Api Key For Mailgun
-var domain              = process.env.DOMAIN;								// Domain Name
+var from_who            = process.env.DO_NOT_REPLY;								// Sender of Email
+var api_key             = process.env.MAILGUN_API_KEY;							// Api Key For Mailgun
+var domain              = process.env.DOMAIN;									// Domain Name
 
 
 var ip                  = process.env.PROTOCOL+'://'+ process.env.STWALLET_IP + ':'+
@@ -593,7 +593,6 @@ module.exports.sendRejectBidNotification = function (req, res){
 	
 }
 
-
 // module.exports.stupdatenotify = function (req, res){
 
 	// var userid = req.params.userid;
@@ -624,71 +623,114 @@ module.exports.sendRejectBidNotification = function (req, res){
 
 module.exports.stdeletenotify = function (req, res){
 
-	var id = req.query.id;
-	var userid = req.params.userid;
+	var id 			= req.query.id;
+	var userid 		= req.params.userid;
+	var publicKey	= req.query.publicKey;
+	var signature	= req.query.signature;
 	
-	id = JSON.parse(id);
+	var query = {publicKey:publicKey,token:true};
+
+	request.post({
+
+        url: ip+'/api/getPvtKey',
+        body: query,
+        json: true,
+        headers: {"content-type": "application/json"}
+
+    },function optionalCallback(err, httpResponse, body){
 	
-	// id = id.replace(/\[/g,"");
-	// id = id.replace(/\]/g,"");
-	// id = id.replace(/\\/g,"");
-	// id = id.split(",");
+		if (err)
+        {
+            return console.error('Curl request Failed for register api: \n', err);
+        }
+        
+		if(body.errCode == -1)
+		{
+			var privateKey = body.errMsg;
+			var text = 'userid='+userid+'&id='+id+'&publicKey='+publicKey;
+			
+			crypt.validateSignature(text, signature, privateKey, function(isValid){
+			
+				// Signature Not Matched
+				if (!isValid)
+				{
+					console.log('Invalid Signature');
+					sendResponse(req, res, 200, 14, "Invalid Signature");
+					return;
+				}
 	
-	if(!Array.isArray(id))
-	{
-		console.log('Invalid Input (Document Id Array)')
-		sendResponse(req, res, 500, 5, 'Invalid Input Parameter');
-		return;
-	}
-	
-	var data = [];
-	
-	async.each(id, function(singleData, callback){
+				id = JSON.parse(id);
+				
+				// id = id.replace(/\[/g,"");
+				// id = id.replace(/\]/g,"");
+				// id = id.replace(/\\/g,"");
+				// id = id.split(",");
+				
+				if(!Array.isArray(id))
+				{
+					console.log('Invalid Input (Document Id Array)')
+					sendResponse(req, res, 500, 5, 'Invalid Input Parameter');
+					return;
+				}
+				
+				var data = [];
+				
+				async.each(id, function(singleData, callback){
+								
+					id	= 	singleData;		// Storing Document id
 					
-		id	= 	singleData;		// Storing Document id
-		
-		console.log(id);
-		
-		notificationschema.notification_msg
-		.findOneAndRemove({$and:[{ _id: id},{user_id:userid}]})
-		.exec(function(err, result) {
-			
-			if(err)
-			{
-				console.log(err)
-				sendResponse(req, res, 500, 5, 'Database Error');
-				return;
-			}
-		
-			if(result=="" || result==undefined || result==null)
-			{
-				callback();
-			}
-			
-			else
-			{
-				data.push(result._id);
-				callback();
-			}
-		
-		})
-		
-	},function(err){
+					notificationschema.notification_msg
+					.findOneAndRemove({$and:[{ _id: id},{user_id:userid}]})
+					.exec(function(err, result) {
 						
-		if(err)
-		{
-			console.log(error);
-			sendResponse(req, res, 500, 5, "Databse Error");
-			return;
+						if(err)
+						{
+							console.log(err)
+							sendResponse(req, res, 500, 5, 'Database Error');
+							return;
+						}
+						
+						console.log(result);
+					
+						if(result=="" || result==undefined || result==null)
+						{
+							callback();
+						}
+						
+						else
+						{
+							data.push(result._id);
+							callback();
+						}
+					
+					})
+					
+				},function(err){
+									
+					if(err)
+					{
+						console.log(error);
+						sendResponse(req, res, 500, 5, "Databse Error");
+						return;
+					}
+					
+					else
+					{
+						if(data==null || data==undefined || data=="")
+						{
+							sendResponse(req, res, 200, -1, "No Data Match Found");
+							return;
+						}
+						
+						sendResponse(req, res, 200, -1, {data:data})
+					}
+				})
+	
+			})
+			
 		}
 		
-		else
-		{
-			sendResponse(req, res, 200, -1, {data:data})
-		}
 	})
-	
-	
 	
 	// notificationschema.notification_msg
 	// .findOneAndRemove({ _id: id})
@@ -720,9 +762,7 @@ module.exports.stgetnotifycount = function (req, res){
 	var category	= req.query.category;
 	var publicKey	= req.query.publicKey;
 	var signature	= req.query.signature;
-	
-	console.log(category);
-	
+
 	var query = {publicKey:publicKey,token:true};
 
 	request.post({
@@ -742,7 +782,7 @@ module.exports.stgetnotifycount = function (req, res){
 		if(body.errCode == -1)
 		{
 			var privateKey = body.errMsg;
-			var text = 'userid='+userid+'&publicKey='+publicKey;
+			var text = 'userid='+userid+'&category='+category+'&publicKey='+publicKey;
 			
 			crypt.validateSignature(text, signature, privateKey, function(isValid){
 			
@@ -797,8 +837,8 @@ module.exports.stgetnotifydata = function (req, res){
 	var from		= req.query.from;
 	var category 	= req.query.category;
 	var query = "";
-	//var publicKey	= req.query.publicKey;
-	//var signature	= req.query.signature;
+	var publicKey	= req.query.publicKey;
+	var signature	= req.query.signature;	
 	
 	if(from == "" || from == null || from == undefined)
 	{
@@ -812,58 +852,126 @@ module.exports.stgetnotifydata = function (req, res){
 	if(!/(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})\.\d{3}Z/.test(from))
 	{
 		sendResponse(req, res, 403, 5, 'Invalid Date Format');
-		
-	} else{
+		return;
+	} 
 	
-		if(category==null || category=='All' || category==undefined || category=="")
-		{
-			query = {$and:[{user_id:userid},{created_at:{$lt:from}}]}
-		}
-		
-		else
-		{
-			query = {$and:[{user_id:userid},{category:category},{created_at:{$lt:from}}]}
-		}
+	var query = {publicKey:publicKey,token:true};
+
+	request.post({
+
+        url: ip+'/api/getPvtKey',
+        body: query,
+        json: true,
+        headers: {"content-type": "application/json"}
+
+    },function optionalCallback(err, httpResponse, body){
 	
-		notificationschema.notification_msg
-		.find(query)
-		.sort({created_at:-1})
-		.limit(50)
-		.exec(function(err, result){
-		
-			if(err)
-			{
-				console.log(err)
-				sendResponse(req, res, 500, 5, 'Database Error');
-				return;
-				
-			} 
-			if(result=="" || result==undefined || result==null)
-			{	
-				console.log('No Data Found');
-				sendResponse(req, res, 200, -1, 'No Data Fount');
-				return;
-			}
-			else {
+		if (err)
+        {
+            return console.error('Curl request Failed for register api: \n', err);
+        }
+        
+		if(body.errCode == -1)
+		{
+			var privateKey = body.errMsg;
+			var text = 'userid='+userid+'&category='+category+'&publicKey='+publicKey;
 			
-				console.log('Result : '+result);
-				console.log(Array.isArray(result));
-				
-				var length = result.length;
-				var index;
-				
-				if(length<50)
+			crypt.validateSignature(text, signature, privateKey, function(isValid){
+			
+				// Signature Not Matched
+				if (!isValid)
 				{
-					index = parseInt(length);
+					console.log('Invalid Signature');
+					sendResponse(req, res, 200, 14, "Invalid Signature");
+					return;
 				}
-				
+	
 				else
 				{
-					index = 49;
+	
+					if(category==null || category=='All' || category==undefined || category=="")
+					{
+						query = {$and:[{user_id:userid},{created_at:{$lt:from}}]}
+					}
+					
+					else
+					{
+						query = {$and:[{user_id:userid},{category:category},{created_at:{$lt:from}}]}
+					}
+				
+					notificationschema.notification_msg
+					.find(query)
+					.sort({created_at:-1})
+					.limit(50)
+					.exec(function(err, result){
+					
+						if(err)
+						{
+							console.log(err)
+							sendResponse(req, res, 500, 5, 'Database Error');
+							return;
+							
+						} 
+						if(result=="" || result==undefined || result==null)
+						{	
+							console.log('No Data Found');
+							sendResponse(req, res, 200, -1, 'No Data Fount');
+							return;
+						}
+						
+						sendResponse(req, res, 200, -1, result);
+						
+					})
+				}
+				
+			})
+			
+		}
+		
+	})
+}
+
+module.exports.updateSTnotify = function (req, res){
+
+	var userid 		= req.params.userid;
+	var docid		= req.params.docid;
+	var publicKey	= req.query.publicKey;
+	var signature	= req.query.signature;
+	
+	var query = {publicKey:publicKey,token:true};
+
+	request.post({
+
+        url: ip+'/api/getPvtKey',
+        body: query,
+        json: true,
+        headers: {"content-type": "application/json"}
+
+    },function optionalCallback(err, httpResponse, body){
+	
+		if (err)
+        {
+            return console.error('Curl request Failed for register api: \n', err);
+        }
+        
+		if(body.errCode == -1)
+		{
+			var privateKey = body.errMsg;
+			var text = 'userid='+userid+'&docid='+docid+'&publicKey='+publicKey;
+			
+			crypt.validateSignature(text, signature, privateKey, function(isValid){
+			
+				// Signature Not Matched
+				if (!isValid)
+				{
+					console.log('Invalid Signature');
+					sendResponse(req, res, 200, 14, "Invalid Signature");
+					return;
 				}
 				
 				notificationschema.notification_msg
-				.update({$and:[{user_id:userid},{created_at:{$gte:result[index-1].created_at}},{created_at:{$lte:result[0].created_at}}]},{$set:{read:true}},{multi:true})
+				.findOneAndUpdate({_id:docid, user_id:userid},{read:true})
+				.lean()
 				.exec(function(err, retVal){
 				
 					if(err)
@@ -871,18 +979,25 @@ module.exports.stgetnotifydata = function (req, res){
 						console.log(err)
 						sendResponse(req, res, 500, 5, 'Database Error');
 						return;
-						
-					} else {
+					}
 					
-						sendResponse(req, res, 200, -1, result);
+					if(retVal=="" || retVal==null || retVal==undefined)
+					{
+						sendResponse(req, res, 404, -1, 'No Such Data');
 						return;
 					}
+					
+					retVal.read = true;
+					sendResponse(req, res, 200, -1, retVal);
+				
 				})
+				
+			})
 			
-			}
-			
-		})
-	}
+		}
+		
+	})
+	
 }
 
 
