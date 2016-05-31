@@ -33,11 +33,11 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(cookieParser())
 
-// app.set('view engine', 'ejs');
+app.set('view engine', 'ejs');
 
-// app.get('/', function (req, res) {
-  // res.sendFile(__dirname + '/index.html');
-// });
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/index.ejs');
+});
 
 // ******************************************************************** //
 
@@ -71,6 +71,7 @@ app.get('/socialmention/user/:userid/count', social_mention_notification.countSo
 // All
 app.delete('/allnotify/user/:userid', merger.deleteAllNotifications);
 // app.get('/allnotify/user/:userid', general.getAllNotifications);
+app.get('/allnotification/user/:userid', general.getAllNotifyData);
 
 // ******************************************************************** //
 
@@ -92,7 +93,7 @@ app.use(function (req, res, next) {
 if (app.get('env') === 'development') {
   app.use(function (err, req, res, next) {
     res.status(err.status || 500)
-    res.render('error.html', {
+    res.render('error.ejs', {
       message: err.message,
       error: err
     })
@@ -103,7 +104,7 @@ if (app.get('env') === 'development') {
 // In prod, dont return stacktrace to the browser
 app.use(function (err, req, res, next) {
   res.status(err.status || 500)
-  res.render('error.html', {
+  res.render('error.ejs', {
     message: err.message,
     error: {}
   })
