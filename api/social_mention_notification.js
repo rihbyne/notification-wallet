@@ -4,11 +4,15 @@
 
 var social_noti_Schema  = require('../model/social_notification_model.js');
 var http 				= require('http');
+var async				= require('async');
+var _ = require('lodash')
+var meta = require('util')
 
 var Mailgun             = require('mailgun-js');							// For Emails (Mailgun Module)
 var request             = require('request');                               // Request Module
 var crypt               = require("../config/crypt");			    		// Crypt Connectivity.
 var util				= require('../helpers/util.js');					// Master Functionality
+var log = require('../config/logging')()
 
 var from_who            = process.env.DO_NOT_REPLY;						// Sender of Email
 var api_key             = process.env.MAILGUN_API_KEY;			// Api Key For Mailgun
@@ -23,10 +27,6 @@ var io 					= require('./socket.js');
 var smsLoginId 			= process.env.PRIMARY_SMS_GATEWAY_ID;;
 var smsPass				= process.env.PRIMARY_SMS_PWD;
 var optins				= process.env.SMS_OPTINS;
-var async				= require('async');
-var _ = require('lodash')
-//var GCM 				= require('gcm').GCM;
-//var gcm 				= new GCM(AIzaSyCO79TE_Cdnl2KMLbb4bxxs-P5DrsAI4WI);
 
 // Response Function
 var sendResponse = function(req, res, status, errCode, errMsg) {
@@ -361,7 +361,6 @@ module.exports.getsocialnotifydata = function (req, res){
 					}
 				
 					social_noti_Schema.social_mention_notification
-					//.find({$and:[{receiver_container:{$elemMatch:{receiver_id:userid}}},{created_at:{$lte:from}}]})
 					.find(query)
 					.sort({'created_at':-1})
 					.limit(1)
@@ -382,60 +381,60 @@ module.exports.getsocialnotifydata = function (req, res){
 							return
 						}
 
-						var tempArray = [];		
-
-						async.each(result, function(singleResult, callback){	
-
-							if(category=="All" || category==null || category==undefined || category=="")
-							{
-								query = {$and: [{"receiver_container.receiver_id": userid},{_id: singleResult._id}]}
-							}
-							else
-							{
-								query = {$and: [{"receiver_container.receiver_id": userid},{category:category},{_id: singleResult._id}]}
-							}
-							
-							console.log(singleResult)
-							social_noti_Schema.social_mention_notification
-							.findOneAndUpdate(query,
-											{
-												"$set": {
-													"receiver_container.$.read": true
-												}
-											}, {new: true}, function(err, revObj) {																																								
-															if (err) {
-																console.log(err)
-																sendResponse(req, res, 500, 5, "Databse Error");
-																return;
-															} else if (!revObj) {
-																// tempArray.push(singleResult);
-																
-															} else {
-																var metaContainer = _.filter(revObj.receiver_container, {'receiver_id': userid})
-																revObj.receiver_container = metaContainer
-																tempArray.push(revObj);
-															}
-															callback()
-							})
-						
-						}, function(err){
-						
-							if(err)
-							{
-								console.log(error);
-								sendResponse(req, res, 500, 5, "Databse Error");
-								return;
-							}
-							
-							sendResponse(req, res, 200, -1, tempArray);																
-						})																	
+            sendResponse(req, res, 200, -1, result)
+//=============================== update on GET ==================
+//						var tempArray = [];		
+//
+//						async.each(result, function(singleResult, callback){	
+//
+//							if(category=="All" || category==null || category==undefined || category=="")
+//							{
+//								query = {$and: [{"receiver_container.receiver_id": userid},{_id: singleResult._id}]}
+//							}
+//							else
+//							{
+//								query = {$and: [{"receiver_container.receiver_id": userid},{category:category},{_id: singleResult._id}]}
+//							}
+//							
+//							console.log(singleResult)
+//							social_noti_Schema.social_mention_notification
+//							.findOneAndUpdate(query,
+//											{
+//												"$set": {
+//													"receiver_container.$.read": true
+//												}
+//											}, {new: true}, function(err, revObj) {																																								
+//															if (err) {
+//																console.log(err)
+//																sendResponse(req, res, 500, 5, "Databse Error");
+//																return;
+//															} else if (!revObj) {
+//																// tempArray.push(singleResult);
+//																
+//															} else {
+//																var metaContainer = _.filter(revObj.receiver_container, {'receiver_id': userid})
+//																revObj.receiver_container = metaContainer
+//																tempArray.push(revObj);
+//															}
+//															callback()
+//							})
+//						
+//						}, function(err){
+//						
+//							if(err)
+//							{
+//								console.log(error);
+//								sendResponse(req, res, 500, 5, "Databse Error");
+//								return;
+//							}
+//							
+//							sendResponse(req, res, 200, -1, tempArray);																
+//						})																	
+//=============================== update on GET ==================
 					})
-				
 				}
-				
 			})
 		}
-		
 	})
 }
 
@@ -597,4 +596,66 @@ module.exports.countSocialMentionNotification = function (req, res){
 	
 	})
 
+}
+
+module.exports.updateMNnotify = function(req, res) {
+  var userid = req.params.userid
+  var docid = req.params.docid
+  var publicKey = req.query.publicKey
+  var signature = req.query.signature
+
+  var query = {
+    publicKey: publicKey,
+    token: true
+  }
+
+  request.post({
+    url: ip+'/api/getPvtKey',
+    body: query,
+    json: true,
+    headers: {"content-type": "application/json"}
+  }, function(err, response, body) {
+    if (err) {
+      log.error(err)
+      sendResponse(req, res, 403, 7, err)
+    }
+
+    if (body.errCode === -1) {
+      var privateKey = body.errMsg
+      var text = 'userid='+userid+'docid='+docid+'&publicKey='+publicKey;
+
+      crypt.validateSignature(text, signature, privateKey, function(isValid) {
+        if (!isValid) {
+            log.warn("invalid signature")
+            sendResponse(req, res, 403, 14, "Invalid Signature")
+        } else {
+          var query = {$and: [{"receiver_container.receiver_id": userid},{_id: docid}]}
+          social_noti_Schema.social_mention_notification
+							              .findOneAndUpdate(query,{
+												      "$set": {
+													      "receiver_container.$.read": true
+												      }
+											      }, {new: true})
+                            .select('_id type post_id category created_at slot receiver_container')
+                            .lean()
+                            .exec(function(err, revObj) {
+															if (err) {
+																log.warn(err)
+																util.sendJsonResponse(res, 500, 5, {failed: "database error"});
+																return;
+															} else if (!revObj) {
+                                util.sendJsonResponse(res, 404, 21, {failed: "object does not exist"})
+															} else {
+																var metaContainer = _.filter(revObj.receiver_container, {'receiver_id': userid})
+																revObj.receiver_id = metaContainer[0].receiver_id
+                                revObj.read = metaContainer[0].read
+                                delete revObj.receiver_container
+                                log.info(meta.inspect(revObj))
+                                util.sendJsonResponse(res, 200, -1, revObj)
+															}
+							              })
+        }
+      })
+    }
+  })
 }
