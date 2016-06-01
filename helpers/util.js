@@ -5,17 +5,19 @@
 var Mailgun             = require('mailgun-js');							// For Emails (Mailgun Module)
 var request             = require('request');                               // Request Module
 
-var from_who            = 'donotreply@searchtrade.com';						// Sender of Email
-var api_key             = 'key-2b8f2419e616db09b1297ba51d7cc770';			// Api Key For Mailgun
-var domain              = 'searchtrade.com';								// Domain Name
+var from_who            = process.env.DO_NOT_REPLY;						// Sender of Email
+var api_key             = process.env.MAILGUN_API_KEY;			// Api Key For Mailgun
+var domain              = process.env.DOMAIN;								// Domain Name
+
 var mailgun             = new Mailgun({apiKey: api_key, domain: domain});	// Mailgun Object
 
-var smsLoginId 			= '9320027660'; //'7827572892';
-var smsPass				= 'tagepuguz';	//'amit123456';
-var optins				= 'OPTINS';
+var smsLoginId 			= process.env.PRIMARY_SMS_GATEWAY_ID;;
+var smsPass				= process.env.PRIMARY_SMS_PWD;
+var optins				= process.env.SMS_OPTINS;
 
 var async				= require('async');
 
+var log = require('../config/logging')()
 module.exports.sendJsonResponse = function (res, status, errCode, errMsg) {
   res.contentType('application/json')
   //  res.status(status)
@@ -25,6 +27,20 @@ module.exports.sendJsonResponse = function (res, status, errCode, errMsg) {
     errCode: errCode,
     errMsg: errMsg
   })
+}
+
+module.exports.validateEmail = function(email){
+    var re = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+	return re.test(email);
+}
+
+module.exports.validateParameter = function (parameter, name) {
+  if (parameter === undefined || parameter.length <= 0) {
+    log.error(name + ' Is Missing')
+    return false
+  }
+
+  return true
 }
 
 module.exports.masterNotification = function(data, cb){
