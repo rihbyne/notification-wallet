@@ -12,6 +12,7 @@ var bformat = require('bunyan-format')
 // var io 					= require('socket.io');
 
 require('dotenv').config() // loads project specific process.env settings from .env
+var mw = require('./config/middleware')
 var log = require('./config/logging')()
 require('./config/db.js') //keep the connection open to db when app boots/reboots
 
@@ -38,7 +39,8 @@ app.set('view engine', 'ejs');
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.ejs');
 });
-
+//public/signature key middleware
+app.use(mw.checkPubSignKey)
 // ******************************************************************** //
 
 // ST Default Email
